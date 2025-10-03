@@ -39,11 +39,11 @@ def add_movie(title: str, year: int, rating: float) -> None:
         query = ("INSERT INTO movies (title, year, rating) "
                  "VALUES (:title, :year, :rating)")
         try:
-            connection.execute(text(query, {
+            connection.execute(text(query), {
                 "title": title,
                 "year": year,
                 "rating": rating
-            }))
+            })
             connection.commit()
             print(f"Movie '{title} added successfully.'")
         except Exception as err:
@@ -55,9 +55,9 @@ def delete_movie(title: str) -> None:
     with engine.connect() as connection:
         query = "DELETE FROM movies WHERE title = :title"
         try:
-            connection.execute(text(query, {
+            connection.execute(text(query), {
                 "title": title
-            }))
+            })
             connection.commit()
             print(f"Movie '{title}' successfully deleted.")
         except Exception as err:
@@ -69,10 +69,10 @@ def update_movie(title: str, rating: float) -> None:
     with engine.connect() as connection:
         query = "UPDATE movies SET rating = :rating WHERE title = :title"
         try:
-            connection.execute(text(query, {
+            connection.execute(text(query), {
                 "title": title,
                 "rating": rating
-            }))
+            })
             connection.commit()
             print(f"Movie '{title}' successfully updated.")
         except Exception as err:
