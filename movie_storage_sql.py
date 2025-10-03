@@ -51,7 +51,7 @@ def add_movie(title: str, year: int, rating: float) -> None:
 
 
 def delete_movie(title: str) -> None:
-    """Delete a existing movie from the database."""
+    """Delete an existing movie from the database."""
     with engine.connect() as connection:
         query = "DELETE FROM movies WHERE title = :title"
         try:
@@ -60,5 +60,20 @@ def delete_movie(title: str) -> None:
             }))
             connection.commit()
             print(f"Movie '{title}' successfully deleted.")
+        except Exception as err:
+            print(f"Error: {err}")
+
+
+def update_movie(title: str, rating: float) -> None:
+    """Update an existing movie rating from the database."""
+    with engine.connect() as connection:
+        query = "UPDATE movies SET rating = :rating WHERE title = :title"
+        try:
+            connection.execute(text(query, {
+                "title": title,
+                "rating": rating
+            }))
+            connection.commit()
+            print(f"Movie '{title}' successfully updated.")
         except Exception as err:
             print(f"Error: {err}")
