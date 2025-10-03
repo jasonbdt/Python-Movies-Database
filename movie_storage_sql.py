@@ -1,3 +1,4 @@
+from typing import Any
 from sqlalchemy import create_engine, text
 
 # Define the database URL
@@ -17,3 +18,16 @@ with engine.connect() as connection:
         )
     """))
     connection.commit()
+
+
+def list_movies() -> dict[Any, dict[str, Any]]:
+    """Retrieve all movies from the database."""
+    with engine.connect() as connection:
+        query = "SELECT title, year, rating FROM movies"
+        results = connection.execute(text(query))
+        movies = results.fetchall()
+
+    return {row[0]: {
+        "year": row[1],
+        "rating": row[2]
+    } for row in movies}
