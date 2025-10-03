@@ -1,5 +1,6 @@
 from typing import Any
 from sqlalchemy import create_engine, text
+from utils import colored_print
 
 # Define the database URL
 DB_URL = "sqlite:///movies.db"
@@ -45,7 +46,8 @@ def add_movie(title: str, year: int, rating: float) -> None:
                 "rating": rating
             })
             connection.commit()
-            print(f"Movie '{title} added successfully.'")
+            colored_print(
+                f"Movie {title} successfully added.", "SUCCESS", True)
         except Exception as err:
             print(f"Error: {err}")
 
@@ -59,7 +61,8 @@ def delete_movie(title: str) -> None:
                 "title": title
             })
             connection.commit()
-            print(f"Movie '{title}' successfully deleted.")
+            colored_print(
+                f"Movie '{title}' successfully deleted.", "SUCCESS", True)
         except Exception as err:
             print(f"Error: {err}")
 
@@ -74,6 +77,7 @@ def update_movie(title: str, rating: float) -> None:
                 "rating": rating
             })
             connection.commit()
-            print(f"Movie '{title}' successfully updated.")
+            colored_print(
+                f"Movie '{title}' successfully updated", "SUCCESS", True)
         except Exception as err:
             print(f"Error: {err}")
