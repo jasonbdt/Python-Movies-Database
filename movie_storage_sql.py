@@ -31,3 +31,20 @@ def list_movies() -> dict[Any, dict[str, Any]]:
         "year": row[1],
         "rating": row[2]
     } for row in movies}
+
+
+def add_movie(title: str, year: int, rating: float) -> None:
+    """Add a new movie to the database."""
+    with (engine.connect() as connection):
+        query = ("INSERT INTO movies (title, year, rating) "
+                 "VALUES (:title, :year, :rating)")
+        try:
+            connection.execute(text(query, {
+                "title": title,
+                "year": year,
+                "rating": rating
+            }))
+            connection.commit()
+            print(f"Movie '{title} added successfully.'")
+        except Exception as err:
+            print(f"Error: {err}")
