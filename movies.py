@@ -5,7 +5,7 @@ import sys
 import Levenshtein
 import matplotlib.pyplot as plt
 
-import movie_storage
+import movie_storage_sql as storage
 from utils import colored_input, colored_print, COLORS, get_valid_number
 from app_types import CLICommand, SearchResults, YearType
 
@@ -85,7 +85,7 @@ def list_movies() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     colored_print(
         f"{len(movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
 
@@ -112,7 +112,7 @@ def add_movie() -> None:
         colored_print("\nPlease type in a movie name!", "ERROR", True)
         return
 
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     if movie_name in movies:
         colored_print("\nMovie already exist!", "ERROR", True)
         return
@@ -130,13 +130,11 @@ def add_movie() -> None:
         num_range=(MIN_YEAR, current_year)
     )
 
-    movie_storage.add_movie(
+    storage.add_movie(
         title=movie_name,
         year=new_movie_year,
         rating=round(new_movie_rating, 2)
     )
-
-    colored_print(f"Movie {movie_name} successfully added", "SUCCESS", True)
 
 
 def delete_movie() -> None:
@@ -150,7 +148,7 @@ def delete_movie() -> None:
         None
     """
     movie_name = colored_input("Enter movie name to delete:", True)
-    movie_storage.delete_movie(movie_name)
+    storage.delete_movie(movie_name)
 
 
 def update_movie() -> None:
@@ -164,13 +162,12 @@ def update_movie() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     movie_name = colored_input("Enter movie name:", True)
 
     if movie_name in movies:
         new_movie_rating = get_valid_number("Enter new rating:", float, True)
-        movie_storage.update_movie(movie_name, new_movie_rating)
-        colored_print(f"Movie {movie_name} successfully updated", "SUCCESS", True)
+        storage.update_movie(movie_name, new_movie_rating)
     else:
         colored_print(f"Movie {movie_name} doesn't exist!", "ERROR", True)
 
@@ -223,7 +220,7 @@ def display_movie_stats() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     ratings = [movie_data['rating'] for movie_data in movies.values()]
     average_rating = round(sum(ratings) / len(ratings), 2)
     median_rating = calc_median_rating(ratings)
@@ -265,7 +262,7 @@ def display_random_movie() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     movie_names = list(map(lambda movie: movie, movies))
     rnd_movie = random.choice(movie_names)
 
@@ -289,7 +286,7 @@ def search_movie() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     search_results: SearchResults = {}
     search_term = colored_input("Enter part of movie name:", True)
     for name, data in movies.items():
@@ -383,7 +380,7 @@ def get_filtered_movies():
         dict[str, dict]: Mapping of movie titles to their data that match the
             provided criteria.
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     current_year = datetime.now().year
     min_rating = get_valid_number(
         "Enter minimum rating (leave blank for no minimum rating):",
@@ -469,7 +466,7 @@ def compute_suggestions(
     Returns:
         SearchResults: A dictionary of suggested movies keyed by title.
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     computed_suggestions: SearchResults = {}
     for name, data in movies.items():
         tokens = name.lower().split()
@@ -508,7 +505,7 @@ def display_movies_by_rating() -> None:
     Returns:
         None
     """
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     sorted_movies = sorted(
         movies.keys(),
         key=lambda movie: movies[movie]['rating'],
@@ -535,7 +532,7 @@ def display_movies_by_year() -> None:
         None
     """
     user_choices = ["First", "Last"]
-    movies = movie_storage.get_movies()
+    movies = storage.list_movies()
     display_menu(user_choices, "Choose order of latest movies")
     user_choice = get_valid_number(
         "Enter choice:",
@@ -572,7 +569,7 @@ def create_rating_histogram() -> None:
         f"{COLORS['RESET']}\n", extra_whitespace=False)
 
     if file_name != "":
-        movies = movie_storage.get_movies()
+        movies = storage.list_movies()
         ratings = [data['rating'] for name, data in movies.items()]
         plt.hist(ratings)
         plt.savefig(f"{file_name}")
