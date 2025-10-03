@@ -35,7 +35,7 @@ def list_movies() -> dict[Any, dict[str, Any]]:
 
 def add_movie(title: str, year: int, rating: float) -> None:
     """Add a new movie to the database."""
-    with (engine.connect() as connection):
+    with engine.connect() as connection:
         query = ("INSERT INTO movies (title, year, rating) "
                  "VALUES (:title, :year, :rating)")
         try:
@@ -46,5 +46,19 @@ def add_movie(title: str, year: int, rating: float) -> None:
             }))
             connection.commit()
             print(f"Movie '{title} added successfully.'")
+        except Exception as err:
+            print(f"Error: {err}")
+
+
+def delete_movie(title: str) -> None:
+    """Delete a existing movie from the database."""
+    with engine.connect() as connection:
+        query = "DELETE FROM movies WHERE title = :title"
+        try:
+            connection.execute(text(query, {
+                "title": title
+            }))
+            connection.commit()
+            print(f"Movie '{title}' successfully deleted.")
         except Exception as err:
             print(f"Error: {err}")
