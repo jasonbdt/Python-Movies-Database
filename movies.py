@@ -132,21 +132,25 @@ def add_movie() -> None:
             movie_data["imdbRating"],
             movie_data["Poster"]
         )
-    else:
-        colored_print(
-            f"No movie with title '{movie_name}' found.", "ERROR", True)
 
 
 def fetch_movie_data(title: str):
-    response = requests.get(f"{API_BASE}", params={
-        "apikey": API_KEY,
-        "t": title
-    })
-
-    if response.ok:
-        data = response.json()
-        if data["Response"] == "True":
-            return data
+    try:
+        response = requests.get(f"{API_BASE}", params={
+            "apikey": API_KEY,
+            "t": title
+        })
+    except requests.exceptions.ConnectionError:
+        colored_print(
+            f"Error fetching data, please try again later!", "ERROR", True)
+    else:
+        if response.ok:
+            data = response.json()
+            if data["Response"] == "True":
+                return data
+            else:
+                colored_print(
+                    f"No movie with title '{title}' found.", "ERROR", True)
 
     return None
 
