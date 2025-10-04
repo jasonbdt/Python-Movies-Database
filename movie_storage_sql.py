@@ -57,10 +57,10 @@ def add_movie(title: str, year: int, rating: float, poster: str) -> None:
 def delete_movie(title: str) -> None:
     """Delete an existing movie from the database."""
     with engine.connect() as connection:
-        query = "DELETE FROM movies WHERE title = :title"
+        query = "DELETE FROM movies WHERE LOWER(title) = :title"
         try:
             connection.execute(text(query), {
-                "title": title
+                "title": title.lower()
             })
             connection.commit()
             colored_print(
@@ -72,10 +72,10 @@ def delete_movie(title: str) -> None:
 def update_movie(title: str, rating: float) -> None:
     """Update an existing movie rating from the database."""
     with engine.connect() as connection:
-        query = "UPDATE movies SET rating = :rating WHERE title = :title"
+        query = "UPDATE movies SET rating = :rating WHERE LOWER(title) = :title"
         try:
             connection.execute(text(query), {
-                "title": title,
+                "title": title.lower(),
                 "rating": rating
             })
             connection.commit()

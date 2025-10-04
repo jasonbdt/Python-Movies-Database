@@ -183,7 +183,7 @@ def update_movie() -> None:
     movies = storage.list_movies()
     movie_name = colored_input("Enter movie name:", True)
 
-    if movie_name in movies:
+    if movie_name.title() in movies:
         new_movie_rating = get_valid_number("Enter new rating:", float, True)
         storage.update_movie(movie_name, new_movie_rating)
     else:
