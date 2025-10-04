@@ -596,6 +596,38 @@ def create_rating_histogram() -> None:
     print()
 
 
+def generate_website() -> None:
+    try:
+        with open("static/index_template.html", "r") as file_obj:
+            template = file_obj.read()
+    except FileNotFoundError:
+        colored_print(
+            "Template file 'static/index_template.html' not found!",
+            "ERROR", True)
+    else:
+        app_title = os.getenv("APP_TITLE")
+        movies_grid = create_movies_grid()
+        template = template.replace("__TEMPLATE_TITLE__", app_title)
+        template = template.replace("__TEMPLATE_MOVIE_GRID__", movies_grid)
+
+        with open("static/index.html", "w") as file_obj:
+            file_obj.write(template)
+            colored_print(
+                "Website was generated successfully.", "SUCCESS", True)
+
+
+def create_movies_grid() -> str:
+    output = ""
+    for title, movie_data in storage.list_movies().items():
+        output += f"""<li><div class='movie'>
+          <img class='movie-poster' src='{movie_data['poster']}' />
+          <div class='movie-title'>{title}</div>
+          <div class='movie-year'>{movie_data['year']}</div>
+        </div></li>"""
+
+    return output
+
+
 def start_movie_app() -> None:
     """
     Start the interactive movie application loop.
@@ -681,6 +713,10 @@ COMMANDS: dict[str, CLICommand] = {
         create_rating_histogram,
         "Create a movie rating histogram and store it as file."
     ),
+    "Generate website": (
+        generate_website,
+        "Generates a website with all movies that are stored in database"
+    )
 }
 
 

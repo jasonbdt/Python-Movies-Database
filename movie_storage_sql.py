@@ -25,13 +25,14 @@ with engine.connect() as connection:
 def list_movies() -> dict[Any, dict[str, Any]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        query = "SELECT title, year, rating FROM movies"
+        query = "SELECT title, year, rating, poster FROM movies"
         results = connection.execute(text(query))
         movies = results.fetchall()
 
     return {row[0]: {
         "year": row[1],
-        "rating": row[2]
+        "rating": row[2],
+        "poster": row[3]
     } for row in movies}
 
 
