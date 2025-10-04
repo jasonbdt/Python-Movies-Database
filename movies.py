@@ -1,15 +1,22 @@
 from datetime import datetime
 import random
+import requests
 import sys
+import os
 
 import Levenshtein
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 
 import movie_storage_sql as storage
 from utils import colored_input, colored_print, COLORS, get_valid_number
 from app_types import CLICommand, SearchResults, YearType
 
+load_dotenv()
+
 APP_TITLE = "My Movies Database"
+API_BASE = "http://www.omdbapi.com"
+API_KEY = os.getenv("API_KEY")
 APP_DATABASE = "data.json"
 MIN_YEAR = 1888
 SEARCH_THRESHOLD = 0.6
@@ -117,24 +124,35 @@ def add_movie() -> None:
         colored_print("\nMovie already exist!", "ERROR", True)
         return
 
-    current_year = datetime.now().year
-    new_movie_rating = get_valid_number(
-        "Enter new movie rating:",
-        num_type=float,
-        with_range=True
-    )
-    new_movie_year = get_valid_number(
-        "Enter the year of release:",
-        with_range=True,
-        display_range=False,
-        num_range=(MIN_YEAR, current_year)
-    )
+    movie_data = fetch_movie_data(movie_name)
+    if movie_data:
+        storage.add_movie(
+            movie_data["Title"],
+            movie_data["Year"],
+            movie_data["imdbRating"],
+            movie_data["Poster"]
+        )
 
-    storage.add_movie(
-        title=movie_name,
-        year=new_movie_year,
-        rating=round(new_movie_rating, 2)
-    )
+
+def fetch_movie_data(title: str):
+    try:
+        response = requests.get(f"{API_BASE}", params={
+            "apikey": API_KEY,
+            "t": title
+        })
+    except requests.exceptions.ConnectionError:
+        colored_print(
+            f"Error fetching data, please try again later!", "ERROR", True)
+    else:
+        if response.ok:
+            data = response.json()
+            if data["Response"] == "True":
+                return data
+            else:
+                colored_print(
+                    f"No movie with title '{title}' found.", "ERROR", True)
+
+    return None
 
 
 def delete_movie() -> None:
@@ -165,7 +183,7 @@ def update_movie() -> None:
     movies = storage.list_movies()
     movie_name = colored_input("Enter movie name:", True)
 
-    if movie_name in movies:
+    if movie_name.title() in movies:
         new_movie_rating = get_valid_number("Enter new rating:", float, True)
         storage.update_movie(movie_name, new_movie_rating)
     else:
