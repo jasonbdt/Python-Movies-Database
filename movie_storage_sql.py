@@ -15,7 +15,8 @@ with engine.connect() as connection:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT UNIQUE NOT NULL,
             year INTEGER NOT NULL,
-            rating REAL NOT NULL
+            rating REAL NOT NULL,
+            poster TEXT NOT NULL
         )
     """))
     connection.commit()
@@ -34,16 +35,17 @@ def list_movies() -> dict[Any, dict[str, Any]]:
     } for row in movies}
 
 
-def add_movie(title: str, year: int, rating: float) -> None:
+def add_movie(title: str, year: int, rating: float, poster: str) -> None:
     """Add a new movie to the database."""
     with engine.connect() as connection:
-        query = ("INSERT INTO movies (title, year, rating) "
-                 "VALUES (:title, :year, :rating)")
+        query = ("INSERT INTO movies (title, year, rating, poster) "
+                 "VALUES (:title, :year, :rating, :poster)")
         try:
             connection.execute(text(query), {
                 "title": title,
                 "year": year,
-                "rating": rating
+                "rating": rating,
+                "poster": poster
             })
             connection.commit()
             colored_print(

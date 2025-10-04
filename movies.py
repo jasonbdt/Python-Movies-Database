@@ -129,7 +129,8 @@ def add_movie() -> None:
         storage.add_movie(
             movie_data["Title"],
             movie_data["Year"],
-            movie_data["imdbRating"]
+            movie_data["imdbRating"],
+            movie_data["Poster"]
         )
     else:
         colored_print(
