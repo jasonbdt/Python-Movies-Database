@@ -1,12 +1,16 @@
 from typing import Any
+import os
+
 from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
 from utils import colored_print
+load_dotenv()
 
 # Define the database URL
-DB_URL = "sqlite:///movies.db"
+DB_URL = "sqlite:///data/movies.db"
 
 # Create the engine
-engine = create_engine(DB_URL, echo=True)
+engine = create_engine(DB_URL, echo=bool(os.getenv("DEBUG_SQL")))
 
 # Create the movies table if it does not exist
 with engine.connect() as connection:

@@ -8,13 +8,12 @@ import Levenshtein
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
-import movie_storage_sql as storage
-from utils import colored_input, colored_print, COLORS, get_valid_number
-from app_types import CLICommand, SearchResults, YearType
+import movie_storage as storage
+from utils import (CLICommand, SearchResults, YearType, colored_input,
+                   colored_print, COLORS, get_valid_number)
 
 load_dotenv()
 
-APP_TITLE = "My Movies Database"
 API_BASE = "http://www.omdbapi.com"
 API_KEY = os.getenv("API_KEY")
 APP_DATABASE = "data.json"
@@ -640,7 +639,7 @@ def start_movie_app() -> None:
     Returns:
         None
     """
-    display_app_title(APP_TITLE)
+    display_app_title(os.getenv("APP_TITLE"))
     while True:
         display_menu(COMMANDS)
         user_cmd, *_ = get_user_choice()
@@ -718,25 +717,3 @@ COMMANDS: dict[str, CLICommand] = {
         "Generates a website with all movies that are stored in database"
     )
 }
-
-
-def main() -> None:
-    """
-    Entry point of the movie application.
-
-    Delegates to ``start_movie_app()`` to run the interactive loop.
-    This function does not load data or perform I/O beyond invoking the
-    application start.
-
-    Returns:
-        None
-    """
-    start_movie_app()
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n")
-        exit_movie_app()

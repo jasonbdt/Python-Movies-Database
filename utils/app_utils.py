@@ -1,5 +1,5 @@
 import colorama
-from app_types import NumType, NumRange
+from utils.app_types import NumType, NumRange
 
 COLORS = {
     "ERROR": colorama.Fore.RED,
