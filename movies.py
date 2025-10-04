@@ -596,6 +596,10 @@ def create_rating_histogram() -> None:
     print()
 
 
+def generate_website() -> None:
+    pass
+
+
 def start_movie_app() -> None:
     """
     Start the interactive movie application loop.
@@ -681,6 +685,10 @@ COMMANDS: dict[str, CLICommand] = {
         create_rating_histogram,
         "Create a movie rating histogram and store it as file."
     ),
+    "Generate website": (
+        generate_website,
+        "Generates a website with all movies that are stored in database"
+    )
 }
 
 
