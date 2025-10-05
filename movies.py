@@ -1,16 +1,19 @@
 from datetime import datetime
 import random
+
 import requests
 import sys
 import os
 
-import Levenshtein
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
 import movie_storage as storage
-from utils import (CLICommand, SearchResults, YearType, colored_input,
-                   colored_print, COLORS, get_valid_number)
+from utils import (CLICommand, SearchResults, calc_median_rating,
+                   colored_input, colored_print, COLORS, get_valid_number,
+                   filter_by_rating, filter_by_year, compute_suggestions,
+                   create_movies_grid)
+import views
 
 load_dotenv()
 
@@ -18,46 +21,6 @@ API_BASE = "http://www.omdbapi.com"
 API_KEY = os.getenv("API_KEY")
 APP_DATABASE = "data.json"
 MIN_YEAR = 1888
-SEARCH_THRESHOLD = 0.6
-
-
-def display_app_title(app_title: str) -> None:
-    """
-    Display the application title centered and styled.
-
-    Centers the given title within 40 characters using asterisks and
-    prints it with the "TITLE" color, followed by a blank line.
-
-    Args:
-        app_title (str): The application's title to display.
-
-    Returns:
-        None
-    """
-    colored_print(f" {app_title} ".center(40, '*'), "TITLE", True)
-
-
-def display_menu(
-    menu: dict[str, CLICommand] | list[str],
-    prompt: str = "Menu"
-) -> None:
-    """
-    Display a menu and its indexed options.
-
-    Prints each entry of the provided ``menu`` (a list of labels or the keys of a
-    command dictionary) with its numeric index under the given ``prompt`` header.
-
-    Args:
-        menu (dict[str, CLICommand] | list[str]): The items to display.
-        prompt (str, optional): Heading shown above the list. Defaults to "Menu".
-
-    Returns:
-        None
-    """
-    colored_print(f"{prompt}:", "MENU")
-    for idx, option in enumerate(menu):
-        colored_print(f"{idx}. {COLORS['MENU_ITEM']}{option}", "MENU")
-    print()
 
 
 def get_user_choice() -> CLICommand:
@@ -189,45 +152,7 @@ def update_movie() -> None:
         colored_print(f"Movie {movie_name} doesn't exist!", "ERROR", True)
 
 
-def is_even(collection: list) -> bool:
-    """
-    Return True if the length of the collection is even.
-
-    Args:
-        collection (list): The sequence to check.
-
-    Returns:
-        bool: True if ``len(collection)`` is even, False otherwise.
-    """
-    return len(collection) % 2 == 0
-
-
-def calc_median_rating(ratings: list[float]) -> float:
-    """
-    Compute the median of a list of ratings.
-
-    Sorts the ratings; for an even count returns the mean of the two
-    middle values, otherwise returns the middle value.
-
-    Args:
-        ratings (list[float]): List of movie ratings.
-
-    Returns:
-        float: The median rating.
-    """
-    sorted_rankings = sorted(ratings)
-
-    if is_even(sorted_rankings):
-        rating_index = len(sorted_rankings) // 2 - 1
-        mid_values = (sorted_rankings[rating_index]
-                      + sorted_rankings[rating_index + 1])
-        return mid_values / 2
-
-    rating_index = len(sorted_rankings) // 2
-    return sorted_rankings[rating_index]
-
-
-def display_movie_stats() -> None:
+def compute_movie_stats() -> None:
     """
     Display summary statistics for the stored movies.
 
@@ -249,46 +174,17 @@ def display_movie_stats() -> None:
         f"{name} ({data['rating']:.1f})" for name, data in movies.items()
         if data['rating'] == min(ratings)
     ]
-    delimiter = f"{COLORS['RESET']}, {COLORS['RATING']}"
 
-    colored_print(
-        f"Average rating: {COLORS['RATING']}{average_rating:.1f}",
-        "STAT_TITLE"
-    )
-    colored_print(
-        f"Median rating: {COLORS['RATING']}{median_rating:.1f}",
-        "STAT_TITLE"
-    )
-    colored_print(
-        f"Best movie(s): {COLORS['RATING']}{delimiter.join(best_movies)}",
-        "STAT_TITLE"
-    )
-    colored_print(
-        f"Worst movie(s): {COLORS['RATING']}{delimiter.join(worst_movies)}",
-        "STAT_TITLE",
-        True
+    views.display_movie_stats(
+        (average_rating, median_rating, best_movies, worst_movies)
     )
 
 
-def display_random_movie() -> None:
-    """
-    Display a random movie suggestion.
-
-    Randomly selects a stored movie and prints its title and rating.
-
-    Returns:
-        None
-    """
+def random_movie() -> None:
     movies = storage.list_movies()
     movie_names = list(map(lambda movie: movie, movies))
     rnd_movie = random.choice(movie_names)
-
-    movie_str = f"{COLORS['MOVIE_TITLE']}{rnd_movie}{COLORS['INFO']}"
-    movie_rating = f"{COLORS['RATING']}{movies[rnd_movie]['rating']:.2f}"
-
-    colored_print(
-        f"Your movie for tonight: {movie_str}, "
-        f"it's rated with {movie_rating}", "INFO", True)
+    views.display_random_movie(rnd_movie, movies[rnd_movie]['rating'])
 
 
 def search_movie() -> None:
@@ -311,7 +207,7 @@ def search_movie() -> None:
             search_results[name] = data
 
     if search_results:
-        display_search_results(search_results)
+        views.display_search_results(search_results)
     else:
         suggestions = compute_suggestions(search_term)
 
@@ -322,7 +218,7 @@ def search_movie() -> None:
                 f"The movie {highlighted_search_term} doesn't exist. "
                 "Did you mean:", "INFO"
             )
-            display_search_results(suggestions)
+            views.display_search_results(suggestions)
         else:
             highlighted_search_term = f"{COLORS['MOVIE_TITLE']}"\
                                       f"{search_term}{COLORS['ERROR']}"
@@ -331,60 +227,7 @@ def search_movie() -> None:
     print()
 
 
-def filter_by_rating(movie, min_rating: float) -> bool:
-    """
-    Return True if the movie's rating meets the minimum threshold.
-
-    Expects a ``(title, data)`` pair as yielded by ``dict.items()``,
-    where ``data`` contains a ``'rating'`` key.
-
-    Args:
-        movie (tuple[str, dict]): A (title, data) pair from the movies mapping.
-        min_rating (float): Inclusive lower bound for the rating.
-
-    Returns:
-        bool: True if ``data['rating'] >= min_rating``, otherwise False.
-    """
-    title, data = movie
-    if data['rating'] >= min_rating:
-        return True
-
-    return False
-
-
-def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
-    """
-    Return True if the movie's year satisfies the given bound.
-
-    When ``year_type`` is ``'start'``, the movie passes if its year is
-    greater than or equal to ``year`` (lower bound). When ``year_type``
-    is ``'end'``, the movie passes if its year is less than or equal to
-    ``year`` (upper bound).
-
-    Args:
-        movie (tuple[str, dict]): A (title, data) pair from
-            the movies mapping.
-        year (int): The boundary year to compare against.
-        year_type (YearType, optional): ``'start'`` for a lower bound
-            (``>= year``) or ``'end'`` for an upper bound (``<= year``).
-            Defaults to ``'start'``.
-
-    Returns:
-        bool: True if the movie satisfies the specified bound,
-            otherwise False.
-    """
-    title, data = movie
-    if year_type == 'start':
-        if data['year'] >= year:
-            return True
-    else:
-        if data['year'] <= year:
-            return True
-
-    return False
-
-
-def get_filtered_movies():
+def filter_movies() -> None:
     """
     Retrieve movies from storage and apply optional rating/year filters.
 
@@ -441,81 +284,10 @@ def get_filtered_movies():
             movies.items()
         ))
 
-    return movies
+    views.display_filtered_movies(movies)
 
 
-def display_filtered_movies() -> None:
-    """
-    Display movies that match the current filter criteria.
-
-    Obtains the filtered collection via ``get_filtered_movies()``,
-    prints the total count, and lists each entry as
-    ``"Title (Year): Rating"`` with formatting.
-
-    Returns:
-        None
-    """
-    filtered_movies = get_filtered_movies()
-    colored_print(
-        f"{len(filtered_movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
-
-    for title, movie_data in filtered_movies.items():
-        rating, year = movie_data['rating'], movie_data['year']
-        colored_print(f"- {COLORS['MOVIE_TITLE']}{title} ({year}):"
-                      f" {COLORS['RATING']}{rating:.2f}")
-    print()
-
-
-def compute_suggestions(
-    search_term: str
-) -> SearchResults:
-    """
-    Compute fuzzy movie title suggestions for a search term.
-
-    Splits each stored title into lowercase tokens and uses
-    ``Levenshtein.ratio`` with ``score_cutoff=SEARCH_THRESHOLD`` to test
-    similarity against the search term. If any token meets the threshold,
-    the movie is included.
-
-    Args:
-        search_term (str): The user's search term.
-
-    Returns:
-        SearchResults: A dictionary of suggested movies keyed by title.
-    """
-    movies = storage.list_movies()
-    computed_suggestions: SearchResults = {}
-    for name, data in movies.items():
-        tokens = name.lower().split()
-        for word in tokens:
-            ratio = Levenshtein.ratio(
-                search_term, word.strip(':'), score_cutoff=SEARCH_THRESHOLD
-            )
-            if ratio > 0:
-                computed_suggestions[name] = data
-                break
-
-    return computed_suggestions
-
-
-def display_search_results(search_results: SearchResults) -> None:
-    """
-    Display a list of search results.
-
-    Args:
-        search_results (SearchResults): Mapping of movie titles to their data.
-
-    Returns:
-        None
-    """
-    for name, data in search_results.items():
-        colored_print(
-            f"- {COLORS['MOVIE_TITLE']}{name}{COLORS['RESET']}, "
-            f"{COLORS['RATING']}{data['rating']:.2f}"
-        )
-
-
-def display_movies_by_rating() -> None:
+def movies_by_rating() -> None:
     """
     Display all movies sorted by rating (descending).
 
@@ -524,20 +296,14 @@ def display_movies_by_rating() -> None:
     """
     movies = storage.list_movies()
     sorted_movies = sorted(
-        movies.keys(),
-        key=lambda movie: movies[movie]['rating'],
+        movies.items(),
+        key=lambda movie: movie[1]['rating'],
         reverse=True
     )
-
-    for movie in sorted_movies:
-        colored_print(
-            f"- {COLORS['MOVIE_TITLE']}{movie}{COLORS['RESET']}, "
-            f"{COLORS['RATING']}{movies[movie]['rating']:.2f}"
-        )
-    print()
+    views.display_movies_by_rating(sorted_movies)
 
 
-def display_movies_by_year() -> None:
+def movies_by_year() -> None:
     """
     Display all movies sorted by release year.
 
@@ -550,7 +316,7 @@ def display_movies_by_year() -> None:
     """
     user_choices = ["First", "Last"]
     movies = storage.list_movies()
-    display_menu(user_choices, "Choose order of latest movies")
+    views.display_menu(user_choices, "Choose order of latest movies")
     user_choice = get_valid_number(
         "Enter choice:",
         with_range=True,
@@ -558,16 +324,11 @@ def display_movies_by_year() -> None:
     )
 
     sorted_movies = sorted(
-        movies.keys(),
-        key=lambda movie: movies[movie]['year'],
+        movies.items(),
+        key=lambda movie: movie[1]['year'],
         reverse=True if user_choice == 0 else False
     )
-
-    for movie_name in sorted_movies:
-        rating, year = movies[movie_name]['rating'], movies[movie_name]['year']
-        colored_print(f"- {COLORS['MOVIE_TITLE']}{movie_name} ({year}):"
-                      f" {COLORS['RATING']}{rating:.2f}")
-    print()
+    views.display_movies_by_year(sorted_movies)
 
 
 def create_rating_histogram() -> None:
@@ -615,18 +376,6 @@ def generate_website() -> None:
                 "Website was generated successfully.", "SUCCESS", True)
 
 
-def create_movies_grid() -> str:
-    output = ""
-    for title, movie_data in storage.list_movies().items():
-        output += f"""<li><div class='movie'>
-          <img class='movie-poster' src='{movie_data['poster']}' />
-          <div class='movie-title'>{title}</div>
-          <div class='movie-year'>{movie_data['year']}</div>
-        </div></li>"""
-
-    return output
-
-
 def start_movie_app() -> None:
     """
     Start the interactive movie application loop.
@@ -639,9 +388,9 @@ def start_movie_app() -> None:
     Returns:
         None
     """
-    display_app_title(os.getenv("APP_TITLE"))
+    views.display_app_title()
     while True:
-        display_menu(COMMANDS)
+        views.display_menu(COMMANDS)
         user_cmd, *_ = get_user_choice()
 
         user_cmd()
@@ -682,12 +431,12 @@ COMMANDS: dict[str, CLICommand] = {
         "Update a stored movie in applications database."
     ),
     "Stats": (
-        display_movie_stats,
+        compute_movie_stats,
         "Displays average stats for each movie stored in applications "
         "database."
     ),
     "Random Movie": (
-        display_random_movie,
+        random_movie,
         "Displays a random movie stored in applications database."
     ),
     "Search Movie": (
@@ -696,16 +445,16 @@ COMMANDS: dict[str, CLICommand] = {
         "that is given by user input."
     ),
     "Filter Movies": (
-        display_filtered_movies,
+        filter_movies,
         "Let users filter movies based on specific criteria such as "
         "minimum rating, start year, and end year."
     ),
     "Movies sorted by rating": (
-        display_movies_by_rating,
+        movies_by_rating,
         "Displays movies by their corresponding rating."
     ),
     "Movies sorted by release year": (
-        display_movies_by_year,
+        movies_by_year,
         "Displays each movie in a chronological order chosen by user."
     ),
     "Create rating histogram": (

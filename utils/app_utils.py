@@ -1,5 +1,8 @@
 import colorama
-from utils.app_types import NumType, NumRange
+import Levenshtein
+
+import movie_storage as storage
+from utils.app_types import NumType, NumRange, YearType, SearchResults
 
 COLORS = {
     "ERROR": colorama.Fore.RED,
@@ -16,6 +19,33 @@ COLORS = {
     "RESET": colorama.Style.RESET_ALL,
     "DEFAULT": colorama.Fore.WHITE
 }
+SEARCH_THRESHOLD = 0.6
+
+
+def calc_median_rating(ratings: list[float]) -> float:
+    """
+    Compute the median of a list of ratings.
+
+    Sorts the ratings; for an even count returns the mean of the two
+    middle values, otherwise returns the middle value.
+
+    Args:
+        ratings (list[float]): List of movie ratings.
+
+    Returns:
+        float: The median rating.
+    """
+    sorted_rankings = sorted(ratings)
+
+    if is_even(sorted_rankings):
+        rating_index = len(sorted_rankings) // 2 - 1
+        mid_values = (sorted_rankings[rating_index]
+                      + sorted_rankings[rating_index + 1])
+        return mid_values / 2
+
+    rating_index = len(sorted_rankings) // 2
+    return sorted_rankings[rating_index]
+
 
 def colored_input(
     msg: str,
@@ -83,6 +113,63 @@ def colored_print(
         print()
 
 
+def compute_suggestions(
+    search_term: str
+) -> SearchResults:
+    """
+    Compute fuzzy movie title suggestions for a search term.
+
+    Splits each stored title into lowercase tokens and uses
+    ``Levenshtein.ratio`` with ``score_cutoff=SEARCH_THRESHOLD`` to test
+    similarity against the search term. If any token meets the threshold,
+    the movie is included.
+
+    Args:
+        search_term (str): The user's search term.
+
+    Returns:
+        SearchResults: A dictionary of suggested movies keyed by title.
+    """
+    movies = storage.list_movies()
+    computed_suggestions: SearchResults = {}
+    for name, data in movies.items():
+        tokens = name.lower().split()
+        for word in tokens:
+            ratio = Levenshtein.ratio(
+                search_term, word.strip(':'), score_cutoff=SEARCH_THRESHOLD
+            )
+            if ratio > 0:
+                computed_suggestions[name] = data
+                break
+
+    return computed_suggestions
+
+
+def create_movies_grid() -> str:
+    output = ""
+    for title, movie_data in storage.list_movies().items():
+        output += f"""<li><div class='movie'>
+          <img class='movie-poster' src='{movie_data['poster']}' />
+          <div class='movie-title'>{title}</div>
+          <div class='movie-year'>{movie_data['year']}</div>
+        </div></li>"""
+
+    return output
+
+
+def is_even(collection: list) -> bool:
+    """
+    Return True if the length of the collection is even.
+
+    Args:
+        collection (list): The sequence to check.
+
+    Returns:
+        bool: True if ``len(collection)`` is even, False otherwise.
+    """
+    return len(collection) % 2 == 0
+
+
 def get_valid_number(
     prompt: str,
     num_type: NumType = int,
@@ -145,3 +232,56 @@ def get_valid_number(
                       f"{num_range[0]}-{num_range[1]}.\n")
             else:
                 return user_input
+
+
+def filter_by_rating(movie, min_rating: float) -> bool:
+    """
+    Return True if the movie's rating meets the minimum threshold.
+
+    Expects a ``(title, data)`` pair as yielded by ``dict.items()``,
+    where ``data`` contains a ``'rating'`` key.
+
+    Args:
+        movie (tuple[str, dict]): A (title, data) pair from the movies mapping.
+        min_rating (float): Inclusive lower bound for the rating.
+
+    Returns:
+        bool: True if ``data['rating'] >= min_rating``, otherwise False.
+    """
+    title, data = movie
+    if data['rating'] >= min_rating:
+        return True
+
+    return False
+
+
+def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
+    """
+    Return True if the movie's year satisfies the given bound.
+
+    When ``year_type`` is ``'start'``, the movie passes if its year is
+    greater than or equal to ``year`` (lower bound). When ``year_type``
+    is ``'end'``, the movie passes if its year is less than or equal to
+    ``year`` (upper bound).
+
+    Args:
+        movie (tuple[str, dict]): A (title, data) pair from
+            the movies mapping.
+        year (int): The boundary year to compare against.
+        year_type (YearType, optional): ``'start'`` for a lower bound
+            (``>= year``) or ``'end'`` for an upper bound (``<= year``).
+            Defaults to ``'start'``.
+
+    Returns:
+        bool: True if the movie satisfies the specified bound,
+            otherwise False.
+    """
+    title, data = movie
+    if year_type == 'start':
+        if data['year'] >= year:
+            return True
+    else:
+        if data['year'] <= year:
+            return True
+
+    return False
