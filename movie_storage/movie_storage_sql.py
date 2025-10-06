@@ -12,16 +12,27 @@ DB_URL = "sqlite:///data/movies.db"
 # Create the engine
 engine = create_engine(DB_URL, echo=bool(os.getenv("DEBUG_SQL")))
 
-# Create the movies table if it does not exist
+# Create the `movies` and `users` table if they does not exist
 with engine.connect() as connection:
     connection.execute(text("""
+        CREATE TABLE IF NOT EXISTS users (
+            'id' INTEGER NOT NULL,
+            'name' TEXT NOT NULL,
+            PRIMARY KEY('id' AUTOINCREMENT)
+        );
+    """))
+
+    connection.execute(text("""
         CREATE TABLE IF NOT EXISTS movies (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT UNIQUE NOT NULL,
-            year INTEGER NOT NULL,
-            rating REAL NOT NULL,
-            poster TEXT NOT NULL
-        )
+            'id' INTEGER NOT NULL,
+            'user_id' INTEGER NOT NULL,
+            'title' TEXT NOT NULL UNIQUE,
+            'year' INTEGER NOT NULL,
+            'rating' REAL NOT NULL,
+            'poster' TEXT NOT NULL,
+            PRIMARY KEY('id' AUTOINCREMENT),
+            FOREIGN KEY('user_id') REFERENCES 'users'('id')
+        );
     """))
     connection.commit()
 
