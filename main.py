@@ -1,8 +1,7 @@
-from movies import start_movie_app, exit_movie_app
-
+import movies
 
 def main() -> None:
-    start_movie_app()
+    movies.start_app()
 
 
 if __name__ == "__main__":
@@ -10,4 +9,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\n")
-        exit_movie_app()
+        movies.exit_app()

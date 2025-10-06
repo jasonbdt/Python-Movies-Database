@@ -4,7 +4,7 @@ import colorama
 import Levenshtein
 
 import movie_storage as storage
-from utils.app_types import NumType, NumRange, YearType, SearchResults
+from utils.app_types import NumType, NumRange, YearType, MoviesCollection
 
 COLORS = {
     "ERROR": colorama.Fore.RED,
@@ -118,7 +118,7 @@ def colored_print(
 def compute_suggestions(
     search_term: str,
     movies: list[tuple[str, dict[str, Any]]]
-) -> SearchResults:
+) -> MoviesCollection:
     """
     Compute fuzzy movie title suggestions for a search term.
 

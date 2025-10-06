@@ -9,12 +9,8 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
 import movie_storage as storage
-from utils import (CLICommand, SearchResults, calc_median_rating,
-                   colored_input, colored_print, COLORS, get_valid_number,
-                   filter_by_rating, filter_by_year, compute_suggestions,
-                   create_movies_grid)
+import utils
 import views
-
 load_dotenv()
 
 API_BASE = "http://www.omdbapi.com"
@@ -22,7 +18,7 @@ API_KEY = os.getenv("API_KEY")
 MIN_YEAR = 1888
 
 
-def get_user_choice() -> CLICommand:
+def get_user_choice() -> utils.CLICommand:
     """
     Prompt the user to select a menu option.
 
@@ -33,7 +29,7 @@ def get_user_choice() -> CLICommand:
         CLICommand: The selected command (callable and its description).
     """
     max_choice = len(COMMANDS) - 1
-    result = get_valid_number(
+    result = utils.get_valid_number(
         "Enter choice:",
         with_range=True,
         num_range=(0, max_choice)
@@ -68,14 +64,14 @@ def add_movie() -> None:
     Returns:
         None
     """
-    movie_name = colored_input("Enter new movie name:")
+    movie_name = utils.colored_input("Enter new movie name:")
     if movie_name == "":
-        colored_print("\nPlease type in a movie name!", "ERROR", True)
+        utils.colored_print("\nPlease type in a movie name!", "ERROR", True)
         return
 
     movies = storage.list_movies()
     if movie_name in movies:
-        colored_print("\nMovie already exist!", "ERROR", True)
+        utils.colored_print("\nMovie already exist!", "ERROR", True)
         return
 
     movie_data = fetch_movie_data(movie_name)
@@ -95,7 +91,7 @@ def fetch_movie_data(title: str):
             "t": title
         })
     except requests.exceptions.ConnectionError:
-        colored_print(
+        utils.colored_print(
             f"Error fetching data, please try again later!", "ERROR", True)
     else:
         if response.ok:
@@ -103,7 +99,7 @@ def fetch_movie_data(title: str):
             if data["Response"] == "True":
                 return data
             else:
-                colored_print(
+                utils.colored_print(
                     f"No movie with title '{title}' found.", "ERROR", True)
 
     return None
@@ -119,7 +115,7 @@ def delete_movie() -> None:
     Returns:
         None
     """
-    movie_name = colored_input("Enter movie name to delete:", True)
+    movie_name = utils.colored_input("Enter movie name to delete:", True)
     storage.delete_movie(movie_name)
 
 
@@ -135,13 +131,15 @@ def update_movie() -> None:
         None
     """
     movies = storage.list_movies()
-    movie_name = colored_input("Enter movie name:", True)
+    movie_name = utils.colored_input("Enter movie name:", True)
 
     if movie_name.title() in movies:
-        new_movie_rating = get_valid_number("Enter new rating:", float, True)
+        new_movie_rating = utils.get_valid_number(
+            "Enter new rating:", float, True)
         storage.update_movie(movie_name, new_movie_rating)
     else:
-        colored_print(f"Movie {movie_name} doesn't exist!", "ERROR", True)
+        utils.colored_print(
+            f"Movie {movie_name} doesn't exist!", "ERROR", True)
 
 
 def compute_movie_stats() -> None:
@@ -157,7 +155,7 @@ def compute_movie_stats() -> None:
     movies = storage.list_movies()
     ratings = [movie_data['rating'] for movie_data in movies.values()]
     average_rating = round(sum(ratings) / len(ratings), 2)
-    median_rating = calc_median_rating(ratings)
+    median_rating = utils.calc_median_rating(ratings)
     best_movies = [
         f"{name} ({data['rating']:.1f})" for name, data in movies.items()
         if data['rating'] == max(ratings)
@@ -192,8 +190,8 @@ def search_movie() -> None:
         None
     """
     movies = storage.list_movies()
-    search_results: SearchResults = []
-    search_term = colored_input("Enter part of movie name:", True)
+    search_results = []
+    search_term = utils.colored_input("Enter part of movie name:", True)
     for title, data in movies:
         if search_term.lower() in title.lower():
             search_results.append((title, data))
@@ -201,19 +199,19 @@ def search_movie() -> None:
     if search_results:
         views.display_movie_list(search_results, show_total=False)
     else:
-        suggestions = compute_suggestions(search_term, movies)
-        highlighted_search_term = f"{COLORS['MOVIE_TITLE']}" \
+        suggestions = utils.compute_suggestions(search_term, movies)
+        highlighted_search_term = f"{utils.COLORS['MOVIE_TITLE']}" \
                                   f"{search_term}"
         if suggestions:
-            colored_print(
-                f"The movie {highlighted_search_term}{COLORS['INFO']} doesn't "
-                "exist. Did you mean:", "INFO"
+            utils.colored_print(
+                f"The movie {highlighted_search_term}{utils.COLORS['INFO']} "
+                "doesn't exist. Did you mean:", "INFO"
             )
             views.display_movie_list(suggestions, show_total=False)
         else:
-            colored_print(
-                f"The movie {highlighted_search_term}{COLORS['ERROR']} doesn't"
-                " exist.", "ERROR")
+            utils.colored_print(
+                f"The movie {highlighted_search_term}{utils.COLORS['ERROR']} "
+                "doesn't exist.", "ERROR")
     print()
 
 
@@ -232,7 +230,7 @@ def filter_movies() -> None:
     """
     movies = storage.list_movies()
     current_year = datetime.now().year
-    min_rating = get_valid_number(
+    min_rating = utils.get_valid_number(
         "Enter minimum rating (leave blank for no minimum rating):",
         num_type=float,
         with_range=True,
@@ -240,7 +238,7 @@ def filter_movies() -> None:
         allow_empty=True
     )
 
-    start_year = get_valid_number(
+    start_year = utils.get_valid_number(
         "Enter start year (leave blank for no start year):",
         with_range=True,
         display_range=False,
@@ -248,7 +246,7 @@ def filter_movies() -> None:
         allow_empty=True
     )
 
-    end_year = get_valid_number(
+    end_year = utils.get_valid_number(
         "Enter end year (leave blank for no end year):",
         with_range=True,
         display_range=False,
@@ -258,19 +256,19 @@ def filter_movies() -> None:
 
     if min_rating:
         movies = filter(
-            lambda movie: filter_by_rating(movie, min_rating),
+            lambda movie: utils.filter_by_rating(movie, min_rating),
             movies
         )
 
     if start_year:
         movies = filter(
-            lambda movie: filter_by_year(movie, start_year),
+            lambda movie: utils.filter_by_year(movie, start_year),
             movies
         )
 
     if end_year:
         movies = filter(
-            lambda movie: filter_by_year(movie, end_year, 'end'),
+            lambda movie: utils.filter_by_year(movie, end_year, 'end'),
             movies
         )
 
@@ -307,7 +305,7 @@ def movies_by_year() -> None:
     user_choices = ["First", "Last"]
     movies = storage.list_movies()
     views.display_menu(user_choices, "Choose order of latest movies")
-    user_choice = get_valid_number(
+    user_choice = utils.get_valid_number(
         "Enter choice:",
         with_range=True,
         num_range=(0, len(user_choices) - 1)
@@ -334,9 +332,9 @@ def create_rating_histogram() -> None:
     Returns:
         None
     """
-    file_name = colored_input(
+    file_name = utils.colored_input(
         "In which file do you want to save the histogram?:"
-        f"{COLORS['RESET']}\n", extra_whitespace=False)
+        f"{utils.COLORS['RESET']}\n", extra_whitespace=False)
 
     if file_name != "":
         movies = storage.list_movies()
@@ -344,7 +342,7 @@ def create_rating_histogram() -> None:
         plt.hist(ratings)
         plt.savefig(f"{file_name}")
     else:
-        colored_print("File name can't be empty!", "ERROR")
+        utils.colored_print("File name can't be empty!", "ERROR")
     print()
 
 
@@ -353,22 +351,22 @@ def generate_website() -> None:
         with open("static/index_template.html", "r") as file_obj:
             template = file_obj.read()
     except FileNotFoundError:
-        colored_print(
+        utils.colored_print(
             "Template file 'static/index_template.html' not found!",
             "ERROR", True)
     else:
         app_title = os.getenv("APP_TITLE")
-        movies_grid = create_movies_grid()
+        movies_grid = utils.create_movies_grid()
         template = template.replace("__TEMPLATE_TITLE__", app_title)
         template = template.replace("__TEMPLATE_MOVIE_GRID__", movies_grid)
 
         with open("static/index.html", "w") as file_obj:
             file_obj.write(template)
-            colored_print(
+            utils.colored_print(
                 "Website was generated successfully.", "SUCCESS", True)
 
 
-def start_movie_app() -> None:
+def start_app() -> None:
     """
     Start the interactive movie application loop.
 
@@ -386,24 +384,24 @@ def start_movie_app() -> None:
         user_cmd, *_ = get_user_choice()
 
         user_cmd()
-        colored_input("Press enter to continue")
+        utils.colored_input("Press enter to continue")
         print()
 
 
-def exit_movie_app() -> None:
+def exit_app() -> None:
     """
     Exit the application with a goodbye message.
 
     Returns:
         None
     """
-    colored_print("Good bye!", "HIGHLIGHT")
+    utils.colored_print("Good bye!", "HIGHLIGHT")
     sys.exit(0)
 
 
-COMMANDS: dict[str, CLICommand] = {
+COMMANDS: dict[str, utils.CLICommand] = {
     "Exit": (
-        exit_movie_app,
+        exit_app,
         "Exits the Movies Database application."
     ),
     "List Movies": (
