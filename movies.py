@@ -19,7 +19,6 @@ load_dotenv()
 
 API_BASE = "http://www.omdbapi.com"
 API_KEY = os.getenv("API_KEY")
-APP_DATABASE = "data.json"
 MIN_YEAR = 1888
 
 
