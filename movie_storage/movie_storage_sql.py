@@ -26,18 +26,18 @@ with engine.connect() as connection:
     connection.commit()
 
 
-def list_movies() -> dict[Any, dict[str, Any]]:
+def list_movies() -> list[tuple[str, dict[str, Any]]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
         query = "SELECT title, year, rating, poster FROM movies"
         results = connection.execute(text(query))
         movies = results.fetchall()
 
-    return {row[0]: {
-        "year": row[1],
-        "rating": row[2],
-        "poster": row[3]
-    } for row in movies}
+    return [(title, {
+        "year": year,
+        "rating": rating,
+        "poster": poster
+    }) for title, year, rating, poster in movies]
 
 
 def add_movie(title: str, year: int, rating: float, poster: str) -> None:

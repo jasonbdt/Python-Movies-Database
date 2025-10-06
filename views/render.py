@@ -1,8 +1,6 @@
 import os
-from typing import Any
 from dotenv import load_dotenv
-from utils import (CLICommand, COLORS, colored_print, MovieCollection,
-                   SearchResults)
+from utils import CLICommand, COLORS, colored_print, MoviesCollection
 load_dotenv()
 
 def display_app_title() -> None:
@@ -64,56 +62,19 @@ def display_random_movie(title: str, rating: float) -> None:
                   f"it's rated with {movie_rating}", "INFO", True)
 
 
-def display_search_results(search_results: SearchResults) -> None:
-    """
-    Display a list of search results.
-
-    Args:
-        search_results (SearchResults): Mapping of movie titles to their data.
-
-    Returns:
-        None
-    """
-    for name, data in search_results.items():
+def display_movie_list(
+    movies: MoviesCollection,
+    show_total: bool = True,
+    show_release_years: bool = False
+) -> None:
+    if show_total:
         colored_print(
-            f"- {COLORS['MOVIE_TITLE']}{name}{COLORS['RESET']}, "
-            f"{COLORS['RATING']}{data['rating']:.2f}"
-        )
+            f"{len(movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
 
+    for title, data in movies:
+        rating, year = data['rating'], data['year']
+        release_year = f" ({year})" if show_release_years else ""
 
-def display_filtered_movies(movies: MovieCollection) -> None:
-    """
-    Display movies that match the current filter criteria.
-
-    Obtains the filtered collection via ``get_filtered_movies()``,
-    prints the total count, and lists each entry as
-    ``"Title (Year): Rating"`` with formatting.
-
-    Returns:
-        None
-    """
-    colored_print(
-        f"{len(movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
-
-    for title, movie_data in movies.items():
-        rating, year = movie_data['rating'], movie_data['year']
-        colored_print(f"- {COLORS['MOVIE_TITLE']}{title} ({year}):"
+        colored_print(f"- {COLORS['MOVIE_TITLE']}{title}{release_year}:"
                       f" {COLORS['RATING']}{rating:.2f}")
-    print()
-
-
-def display_movies_by_rating(movies: list[tuple[str, dict[str, Any]]]) -> None:
-    for title, data in movies:
-        colored_print(
-            f"- {COLORS['MOVIE_TITLE']}{title}{COLORS['RESET']}, "
-            f"{COLORS['RATING']}{data['rating']:.2f}"
-        )
-    print()
-
-
-def display_movies_by_year(movies: list[tuple[str, dict[str, Any]]]) -> None:
-    for title, data in movies:
-        colored_print(
-            f"- {COLORS['MOVIE_TITLE']}{title} ({data['year']}): "
-            f"{COLORS['RATING']}{data['rating']:.2f}")
     print()

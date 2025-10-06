@@ -55,14 +55,7 @@ def list_movies() -> None:
         None
     """
     movies = storage.list_movies()
-    colored_print(
-        f"{len(movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
-
-    for movie_name, movie_data in movies.items():
-        rating, year = movie_data['rating'], movie_data['year']
-        colored_print(f"- {COLORS['MOVIE_TITLE']}{movie_name} ({year}):"
-                      f" {COLORS['RATING']}{rating:.2f}")
-    print()
+    views.display_movie_list(movies)
 
 
 def add_movie() -> None:
@@ -200,30 +193,28 @@ def search_movie() -> None:
         None
     """
     movies = storage.list_movies()
-    search_results: SearchResults = {}
+    search_results: SearchResults = []
     search_term = colored_input("Enter part of movie name:", True)
-    for name, data in movies.items():
-        if search_term.lower() in name.lower():
-            search_results[name] = data
+    for title, data in movies:
+        if search_term.lower() in title.lower():
+            search_results.append((title, data))
 
     if search_results:
-        views.display_search_results(search_results)
+        views.display_movie_list(search_results, show_total=False)
     else:
-        suggestions = compute_suggestions(search_term)
-
+        suggestions = compute_suggestions(search_term, movies)
+        highlighted_search_term = f"{COLORS['MOVIE_TITLE']}" \
+                                  f"{search_term}"
         if suggestions:
-            highlighted_search_term = f"{COLORS['MOVIE_TITLE']}"\
-                                      f"{search_term}{COLORS['INFO']}"
             colored_print(
-                f"The movie {highlighted_search_term} doesn't exist. "
-                "Did you mean:", "INFO"
+                f"The movie {highlighted_search_term}{COLORS['INFO']} doesn't "
+                "exist. Did you mean:", "INFO"
             )
-            views.display_search_results(suggestions)
+            views.display_movie_list(suggestions, show_total=False)
         else:
-            highlighted_search_term = f"{COLORS['MOVIE_TITLE']}"\
-                                      f"{search_term}{COLORS['ERROR']}"
             colored_print(
-                f"The movie {highlighted_search_term} doesn't exist.", "ERROR")
+                f"The movie {highlighted_search_term}{COLORS['ERROR']} doesn't"
+                " exist.", "ERROR")
     print()
 
 
@@ -267,24 +258,24 @@ def filter_movies() -> None:
     )
 
     if min_rating:
-        movies = dict(filter(
-            lambda movie_data: filter_by_rating(movie_data, min_rating),
-            movies.items()
-        ))
+        movies = filter(
+            lambda movie: filter_by_rating(movie, min_rating),
+            movies
+        )
 
     if start_year:
-        movies = dict(filter(
-            lambda movie_data: filter_by_year(movie_data, start_year),
-            movies.items()
-        ))
+        movies = filter(
+            lambda movie: filter_by_year(movie, start_year),
+            movies
+        )
 
     if end_year:
-        movies = dict(filter(
-            lambda movie_data: filter_by_year(movie_data, end_year, 'end'),
-            movies.items()
-        ))
+        movies = filter(
+            lambda movie: filter_by_year(movie, end_year, 'end'),
+            movies
+        )
 
-    views.display_filtered_movies(movies)
+    views.display_movie_list(movies)
 
 
 def movies_by_rating() -> None:
@@ -296,11 +287,11 @@ def movies_by_rating() -> None:
     """
     movies = storage.list_movies()
     sorted_movies = sorted(
-        movies.items(),
+        movies,
         key=lambda movie: movie[1]['rating'],
         reverse=True
     )
-    views.display_movies_by_rating(sorted_movies)
+    views.display_movie_list(sorted_movies)
 
 
 def movies_by_year() -> None:
@@ -324,11 +315,13 @@ def movies_by_year() -> None:
     )
 
     sorted_movies = sorted(
-        movies.items(),
+        movies,
         key=lambda movie: movie[1]['year'],
         reverse=True if user_choice == 0 else False
     )
-    views.display_movies_by_year(sorted_movies)
+
+    views.display_movie_list(
+        sorted_movies, show_total=False, show_release_years=True)
 
 
 def create_rating_histogram() -> None:
@@ -348,7 +341,7 @@ def create_rating_histogram() -> None:
 
     if file_name != "":
         movies = storage.list_movies()
-        ratings = [data['rating'] for name, data in movies.items()]
+        ratings = [data['rating'] for name, data in movies]
         plt.hist(ratings)
         plt.savefig(f"{file_name}")
     else:

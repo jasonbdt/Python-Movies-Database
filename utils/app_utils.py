@@ -1,3 +1,5 @@
+from typing import Any
+
 import colorama
 import Levenshtein
 
@@ -114,7 +116,8 @@ def colored_print(
 
 
 def compute_suggestions(
-    search_term: str
+    search_term: str,
+    movies: list[tuple[str, dict[str, Any]]]
 ) -> SearchResults:
     """
     Compute fuzzy movie title suggestions for a search term.
@@ -130,16 +133,15 @@ def compute_suggestions(
     Returns:
         SearchResults: A dictionary of suggested movies keyed by title.
     """
-    movies = storage.list_movies()
-    computed_suggestions: SearchResults = {}
-    for name, data in movies.items():
-        tokens = name.lower().split()
+    computed_suggestions: SearchResults = []
+    for title, data in movies:
+        tokens = title.lower().split()
         for word in tokens:
             ratio = Levenshtein.ratio(
                 search_term, word.strip(':'), score_cutoff=SEARCH_THRESHOLD
             )
             if ratio > 0:
-                computed_suggestions[name] = data
+                computed_suggestions.append((title, data))
                 break
 
     return computed_suggestions
@@ -147,11 +149,11 @@ def compute_suggestions(
 
 def create_movies_grid() -> str:
     output = ""
-    for title, movie_data in storage.list_movies().items():
+    for title, data in storage.list_movies():
         output += f"""<li><div class='movie'>
-          <img class='movie-poster' src='{movie_data['poster']}' />
+          <img class='movie-poster' src='{data['poster']}' />
           <div class='movie-title'>{title}</div>
-          <div class='movie-year'>{movie_data['year']}</div>
+          <div class='movie-year'>{data['year']}</div>
         </div></li>"""
 
     return output
