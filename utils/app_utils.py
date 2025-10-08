@@ -155,10 +155,15 @@ def compute_suggestions(
 def create_movies_grid() -> str:
     output = ""
     for title, data in storage.list_movies():
+        note = "" if data['note'] is None else f"title='{data['note']}'"
         output += f"""<li><div class='movie'>
-          <img class='movie-poster' src='{data['poster']}' title='{data['note']}' />
+          <img class='movie-poster' src='{data['poster']}' {note}/>
           <div class='movie-title'>{title}</div>
           <div class='movie-year'>{data['year']}</div>
+          <div class='movie-rating'>
+            <span>Rated:</span> {data['rating']}
+            <span class="fa fa-star checked"></span>
+          </div>
         </div></li>"""
 
     return output
