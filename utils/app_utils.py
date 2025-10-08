@@ -16,6 +16,7 @@ COLORS = {
     "STAT_TITLE": colorama.Fore.LIGHTCYAN_EX,
     "INFO": colorama.Fore.LIGHTGREEN_EX,
     "MENU": colorama.Fore.LIGHTYELLOW_EX,
+    "NOTE": colorama.Fore.LIGHTMAGENTA_EX,
     "RATING": colorama.Fore.LIGHTYELLOW_EX,
     "MENU_ITEM": colorama.Fore.LIGHTCYAN_EX,
     "SUCCESS": colorama.Back.GREEN + colorama.Fore.LIGHTWHITE_EX,

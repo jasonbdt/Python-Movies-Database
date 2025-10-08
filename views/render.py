@@ -76,19 +76,23 @@ def display_movie_list(
     show_release_years: bool = False
 ) -> None:
     *_, username = utils.get_current_user()
-    if show_total and movies:
-        colored_print(f"{username}, you've {COLORS['HIGHLIGHT']}{len(movies)} "
-                      f"movies {COLORS['INFO']}in your collection:", "INFO")
-    else:
-        colored_print(f"{username}, your {COLORS['HIGHLIGHT']}movie collection"
-                      f" is empty{COLORS['INFO']}. Add some movies!", "INFO")
+    if show_total:
+        if movies:
+            colored_print(f"{username}, you've {COLORS['HIGHLIGHT']}"
+                          f"{len(movies)} movies {COLORS['INFO']}in your "
+                          "collection:", "INFO", True)
+        else:
+            colored_print(f"{username}, your {COLORS['HIGHLIGHT']}movie collection"
+                          f" is empty{COLORS['INFO']}. Add some movies!", "INFO")
 
     for title, data in movies:
         rating, year = data['rating'], data['year']
         release_year = f" ({year})" if show_release_years else ""
+        movie_note = data.get('note', "Empty")
 
         colored_print(f"- {COLORS['MOVIE_TITLE']}{title}{release_year}:"
-                      f" {COLORS['RATING']}{rating:.2f}")
+                      f" {COLORS['RATING']}{rating:.2f}\n"
+                      f"  {COLORS['NOTE']}Note: {movie_note}\n")
 
     print()
 

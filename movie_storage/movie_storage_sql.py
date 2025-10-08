@@ -32,6 +32,7 @@ with engine.connect() as connection:
             'year' INTEGER NOT NULL,
             'rating' REAL NOT NULL,
             'poster' TEXT NOT NULL,
+            'note' TEXT,
             PRIMARY KEY('id' AUTOINCREMENT),
             FOREIGN KEY('user_id') REFERENCES 'users'('id')
         );
@@ -55,13 +56,13 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
     }) for title, year, rating, poster in movies]
 
 
-def add_movie(title: str, year: int, rating: float, poster: str) -> None:
+def add_movie(title: str, year: int, rating: float, poster: str, note: str) -> None:
     """Add a new movie to the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
-                INSERT INTO movies (user_id, title, year, rating, poster)
-                VALUES (:user_id, :title, :year, :rating, :poster)
+                INSERT INTO movies (user_id, title, year, rating, poster, note)
+                VALUES (:user_id, :title, :year, :rating, :poster, :note)
                 """
         try:
             connection.execute(text(query), {
@@ -69,7 +70,8 @@ def add_movie(title: str, year: int, rating: float, poster: str) -> None:
                 "title": title,
                 "year": year,
                 "rating": rating,
-                "poster": poster
+                "poster": poster,
+                "note": None if note == "" else note
             })
             connection.commit()
             colored_print(f"Movie {title} successfully added "
