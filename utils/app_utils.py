@@ -1,9 +1,11 @@
 from typing import Any
+import sys
 
 import colorama
 import Levenshtein
 
 import movie_storage as storage
+# from views import display_welcome_message, display_menu
 from utils.app_types import NumType, NumRange, YearType, MoviesCollection
 
 COLORS = {
@@ -23,6 +25,8 @@ COLORS = {
 }
 SEARCH_THRESHOLD = 0.6
 
+
+__current_user: tuple[int, str] | None = None
 
 def calc_median_rating(ratings: list[float]) -> float:
     """
@@ -287,3 +291,42 @@ def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
             return True
 
     return False
+
+
+def get_user_menu(users):
+    users_str = list(map(lambda user: user[1], users))
+    users_str.append("Create new user")
+
+    return users_str, len(users_str)-1
+
+
+def select_user(users) -> None:
+    *_, last_item_idx = get_user_menu(users)
+    user_id = get_valid_number("Enter choice (or leave blank to exit app)",
+                                with_range=True,
+                                num_range=(0, last_item_idx),
+                                allow_empty=True)
+
+    if user_id is None:
+        colored_print("Good bye!", "HIGHLIGHT")
+        sys.exit(0)
+
+    if user_id == last_item_idx:
+        username = colored_input("Enter your name (e.g. Max): ")
+        storage.add_user(username)
+    else:
+        set_current_user(users[user_id])
+
+
+def get_current_user() -> tuple[int, str]:
+    return __current_user
+
+
+def set_current_user(user: tuple[int, str] | None) -> None:
+    global __current_user
+    __current_user = user
+
+
+def logout_user() -> None:
+    set_current_user(None)
+    colored_print("Logged out successfully!", "SUCCESS", True)
