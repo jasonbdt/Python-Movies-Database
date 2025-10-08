@@ -378,6 +378,27 @@ def start_app() -> None:
     Returns:
         None
     """
+    active_user = None
+    users = storage.get_users()
+
+    while not active_user:
+        users_str = list(map(lambda user: user[1], users))
+        users_str.append("Create new user")
+        views.display_welcome_message()
+        views.display_menu(users_str, "Select a user")
+        user_id = utils.get_valid_number("Enter choice",
+                                         with_range=True,
+                                         num_range=(0, len(users_str)-1))
+
+        if user_id == len(users_str)-1:
+            username = utils.colored_input("Enter your name (e.g. Max): ")
+            print("Create new user", username)
+        else:
+            active_user = users[user_id]
+            print(f"Choosen user: {users[user_id][1]}")
+
+    # user_id = utils.colored_input(f"Enter choice (0-{len(users)-1}):")
+
     views.display_app_title()
     while True:
         views.display_menu(COMMANDS)

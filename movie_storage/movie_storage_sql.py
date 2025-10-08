@@ -1,7 +1,7 @@
 from typing import Any
 import os
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, Row
 from dotenv import load_dotenv
 from utils import colored_print
 load_dotenv()
@@ -99,3 +99,14 @@ def update_movie(title: str, rating: float) -> None:
                 f"Movie '{title}' successfully updated", "SUCCESS", True)
         except Exception as err:
             print(f"Error: {err}")
+
+
+def get_users() -> list[tuple[int, str]]:
+    """Retrieve all users from the database."""
+    with engine.connect() as connection:
+        query = "SELECT id, name FROM users"
+        results = connection.execute(text(query))
+        users = results.fetchall()
+
+    return [(id, name) for id, name in users]
+

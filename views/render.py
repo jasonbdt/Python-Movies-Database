@@ -1,5 +1,8 @@
 import os
+from typing import Any
 from dotenv import load_dotenv
+from sqlalchemy import Row
+
 from utils import CLICommand, COLORS, colored_print, MoviesCollection
 load_dotenv()
 
@@ -8,8 +11,12 @@ def display_app_title() -> None:
     colored_print(f" {title} ".center(40, "*"), "TITLE", True)
 
 
+def display_welcome_message() -> None:
+    colored_print("Welcome to the Movie App! 🎬", "TITLE", True)
+
+
 def display_menu(
-    items: dict[str, CLICommand] | list[str],
+    items: dict[str, CLICommand] | list[str] | list[Row[Any]],
     label: str = "Menu"
 ) -> None:
     """
