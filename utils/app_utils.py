@@ -24,6 +24,8 @@ COLORS = {
 SEARCH_THRESHOLD = 0.6
 
 
+__current_user: tuple[int, str] | None = None
+
 def calc_median_rating(ratings: list[float]) -> float:
     """
     Compute the median of a list of ratings.
@@ -287,3 +289,12 @@ def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
             return True
 
     return False
+
+
+def get_current_user() -> tuple[int, str]:
+    return __current_user
+
+
+def set_current_user(user: tuple[int, str]) -> None:
+    global __current_user
+    __current_user = user

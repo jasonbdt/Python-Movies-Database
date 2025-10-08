@@ -3,6 +3,8 @@ import os
 
 from sqlalchemy import create_engine, text, Row
 from dotenv import load_dotenv
+
+import utils
 from utils import colored_print
 load_dotenv()
 
@@ -40,8 +42,10 @@ with engine.connect() as connection:
 def list_movies() -> list[tuple[str, dict[str, Any]]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        query = "SELECT title, year, rating, poster FROM movies"
-        results = connection.execute(text(query))
+        query = "SELECT title, year, rating, poster FROM movies WHERE user_id = :user_id"
+        results = connection.execute(text(query), {
+            "user_id": utils.get_current_user()[0]
+        })
         movies = results.fetchall()
 
     return [(title, {
@@ -54,10 +58,11 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
 def add_movie(title: str, year: int, rating: float, poster: str) -> None:
     """Add a new movie to the database."""
     with engine.connect() as connection:
-        query = ("INSERT INTO movies (title, year, rating, poster) "
-                 "VALUES (:title, :year, :rating, :poster)")
+        query = ("INSERT INTO movies (user_id, title, year, rating, poster) "
+                 "VALUES (:user_id, :title, :year, :rating, :poster)")
         try:
             connection.execute(text(query), {
+                "user_id": utils.get_current_user()[0],
                 "title": title,
                 "year": year,
                 "rating": rating,
@@ -73,9 +78,11 @@ def add_movie(title: str, year: int, rating: float, poster: str) -> None:
 def delete_movie(title: str) -> None:
     """Delete an existing movie from the database."""
     with engine.connect() as connection:
-        query = "DELETE FROM movies WHERE LOWER(title) = :title"
+        query = ("DELETE FROM movies WHERE LOWER(title) = :title "
+                 "AND user_id = :user_id")
         try:
             connection.execute(text(query), {
+                "user_id": utils.get_current_user()[0],
                 "title": title.lower()
             })
             connection.commit()
@@ -88,9 +95,11 @@ def delete_movie(title: str) -> None:
 def update_movie(title: str, rating: float) -> None:
     """Update an existing movie rating from the database."""
     with engine.connect() as connection:
-        query = "UPDATE movies SET rating = :rating WHERE LOWER(title) = :title"
+        query = ("UPDATE movies SET rating = :rating "
+                 "WHERE LOWER(title) = :title AND user_id = :user_id")
         try:
             connection.execute(text(query), {
+                "user_id": utils.get_current_user()[0],
                 "title": title.lower(),
                 "rating": rating
             })
