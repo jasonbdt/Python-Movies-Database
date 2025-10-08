@@ -28,6 +28,7 @@ with engine.connect() as connection:
         CREATE TABLE IF NOT EXISTS movies (
             'id' INTEGER NOT NULL,
             'user_id' INTEGER NOT NULL,
+            'imdb_id' TEXT NOT NULL,
             'title' TEXT NOT NULL,
             'year' INTEGER NOT NULL,
             'rating' REAL NOT NULL,
@@ -43,8 +44,8 @@ with engine.connect() as connection:
 def list_movies() -> list[tuple[str, dict[str, Any]]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        query = """SELECT title, year, rating, poster, note FROM movies
-                   WHERE user_id = :user_id"""
+        query = """SELECT title, year, rating, poster, note, imdb_id
+                   FROM movies WHERE user_id = :user_id"""
         results = connection.execute(text(query), {
             "user_id": utils.get_current_user()[0]
         })
@@ -54,17 +55,25 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
         "year": year,
         "rating": rating,
         "poster": poster,
-        "note": note
-    }) for title, year, rating, poster, note in movies]
+        "note": note,
+        "imdb_id": imdb_id
+    }) for title, year, rating, poster, note, imdb_id in movies]
 
 
-def add_movie(title: str, year: int, rating: float, poster: str, note: str) -> None:
+def add_movie(
+    title: str,
+    year: int,
+    rating: float,
+    poster: str,
+    note: str,
+    imdb_id: str
+) -> None:
     """Add a new movie to the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
-                INSERT INTO movies (user_id, title, year, rating, poster, note)
-                VALUES (:user_id, :title, :year, :rating, :poster, :note)
+                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id)
+                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id)
                 """
         try:
             connection.execute(text(query), {
@@ -73,7 +82,8 @@ def add_movie(title: str, year: int, rating: float, poster: str, note: str) -> N
                 "year": year,
                 "rating": rating,
                 "poster": poster,
-                "note": None if note == "" else note
+                "note": None if note == "" else note,
+                "imdb_id": imdb_id
             })
             connection.commit()
             colored_print(f"Movie {title} successfully added "

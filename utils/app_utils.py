@@ -5,7 +5,6 @@ import colorama
 import Levenshtein
 
 import movie_storage as storage
-# from views import display_welcome_message, display_menu
 from utils.app_types import NumType, NumRange, YearType, MoviesCollection
 
 COLORS = {
@@ -157,7 +156,9 @@ def create_movies_grid() -> str:
     for title, data in storage.list_movies():
         note = "" if data['note'] is None else f"title='{data['note']}'"
         output += f"""<li><div class='movie'>
-          <img class='movie-poster' src='{data['poster']}' {note}/>
+          <a href='https://www.imdb.com/title/{data['imdb_id']}/' target='_blank'>
+            <img class='movie-poster' src='{data['poster']}' {note}/>
+          </a>
           <div class='movie-title'>{title}</div>
           <div class='movie-year'>{data['year']}</div>
           <div class='movie-rating'>

@@ -83,7 +83,8 @@ def add_movie() -> None:
                 movie_data["Year"],
                 movie_data["imdbRating"],
                 movie_data["Poster"],
-                note
+                note,
+                movie_data["imdbID"]
             )
 
 
