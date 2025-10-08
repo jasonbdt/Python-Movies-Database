@@ -3,7 +3,7 @@ from typing import Any
 from dotenv import load_dotenv
 from sqlalchemy import Row
 
-from utils import CLICommand, COLORS, colored_print, MoviesCollection
+from utils import CLICommand, COLORS, colored_print, MoviesCollection, get_user_menu
 load_dotenv()
 
 def display_app_title() -> None:
@@ -85,3 +85,9 @@ def display_movie_list(
         colored_print(f"- {COLORS['MOVIE_TITLE']}{title}{release_year}:"
                       f" {COLORS['RATING']}{rating:.2f}")
     print()
+
+
+def display_select_user(users) -> None:
+    menu_items, *_ = get_user_menu(users)
+    display_welcome_message()
+    display_menu(menu_items, "Select a user")

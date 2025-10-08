@@ -378,30 +378,18 @@ def start_app() -> None:
     Returns:
         None
     """
-    while not utils.get_current_user():
-        users = storage.get_users()
-        users_str = list(map(lambda user: user[1], users))
-        users_str.append("Create new user")
-        views.display_welcome_message()
-        views.display_menu(users_str, "Select a user")
-        user_id = utils.get_valid_number("Enter choice",
-                                         with_range=True,
-                                         num_range=(0, len(users_str)-1))
-
-        if user_id == len(users_str)-1:
-            username = utils.colored_input("Enter your name (e.g. Max): ")
-            storage.add_user(username)
-        else:
-            utils.set_current_user(users[user_id])
-
-    views.display_app_title()
     while True:
-        views.display_menu(COMMANDS)
-        user_cmd, *_ = get_user_choice()
+        if utils.get_current_user():
+            views.display_menu(COMMANDS)
+            user_cmd, *_ = get_user_choice()
 
-        user_cmd()
-        utils.colored_input("Press enter to continue")
-        print()
+            user_cmd()
+            utils.colored_input("Press enter to continue")
+            print()
+        else:
+            users = storage.get_users()
+            views.display_select_user(users)
+            utils.select_user(users)
 
 
 def exit_app() -> None:
@@ -416,7 +404,7 @@ def exit_app() -> None:
 
 
 COMMANDS: dict[str, utils.CLICommand] = {
-    "Exit": (
+    "Exit App": (
         exit_app,
         "Exits the Movies Database application."
     ),
@@ -470,5 +458,10 @@ COMMANDS: dict[str, utils.CLICommand] = {
     "Generate website": (
         generate_website,
         "Generates a website with all movies that are stored in database"
+    ),
+    "Switch user": (
+        utils.logout_user,
+        "Logout of the current user and turn back to user profiles view "
+        "to allow profile switching."
     )
 }
