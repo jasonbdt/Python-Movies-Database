@@ -379,9 +379,9 @@ def start_app() -> None:
         None
     """
     active_user = None
-    users = storage.get_users()
 
     while not active_user:
+        users = storage.get_users()
         users_str = list(map(lambda user: user[1], users))
         users_str.append("Create new user")
         views.display_welcome_message()
@@ -392,7 +392,7 @@ def start_app() -> None:
 
         if user_id == len(users_str)-1:
             username = utils.colored_input("Enter your name (e.g. Max): ")
-            print("Create new user", username)
+            storage.add_user(username)
         else:
             active_user = users[user_id]
             print(f"Choosen user: {users[user_id][1]}")

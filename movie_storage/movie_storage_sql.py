@@ -67,7 +67,7 @@ def add_movie(title: str, year: int, rating: float, poster: str) -> None:
             colored_print(
                 f"Movie {title} successfully added.", "SUCCESS", True)
         except Exception as err:
-            print(f"Error: {err}")
+            colored_print(f"Error: {err}", "ERROR", True)
 
 
 def delete_movie(title: str) -> None:
@@ -82,7 +82,7 @@ def delete_movie(title: str) -> None:
             colored_print(
                 f"Movie '{title}' successfully deleted.", "SUCCESS", True)
         except Exception as err:
-            print(f"Error: {err}")
+            colored_print(f"Error: {err}", "ERROR", True)
 
 
 def update_movie(title: str, rating: float) -> None:
@@ -98,7 +98,7 @@ def update_movie(title: str, rating: float) -> None:
             colored_print(
                 f"Movie '{title}' successfully updated", "SUCCESS", True)
         except Exception as err:
-            print(f"Error: {err}")
+            colored_print(f"Error: {err}", "ERROR", True)
 
 
 def get_users() -> list[tuple[int, str]]:
@@ -110,3 +110,16 @@ def get_users() -> list[tuple[int, str]]:
 
     return [(id, name) for id, name in users]
 
+
+def add_user(name: str) -> None:
+    with engine.connect() as connection:
+        query = "INSERT INTO users (name) VALUES (:name)"
+        try:
+            connection.execute(text(query), {
+                "name": name
+            })
+            connection.commit()
+            colored_print(
+                f"User '{name}' successfully created.", "SUCCESS", True)
+        except Exception as err:
+            colored_print(f"Error: {err}", "ERROR", True)
