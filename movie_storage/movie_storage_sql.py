@@ -98,17 +98,17 @@ def delete_movie(title: str) -> None:
             colored_print(f"Error: {err}", "ERROR", True)
 
 
-def update_movie(title: str, rating: float) -> None:
+def update_movie(title: str, note: str) -> None:
     """Update an existing movie rating from the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
-        query = ("UPDATE movies SET rating = :rating "
+        query = ("UPDATE movies SET note = :note "
                  "WHERE LOWER(title) = :title AND user_id = :user_id")
         try:
             connection.execute(text(query), {
                 "user_id": user_id,
                 "title": title.lower(),
-                "rating": rating
+                "note": None if note == "" else note
             })
             connection.commit()
             colored_print(f"Movie '{title}' successfully updated in "

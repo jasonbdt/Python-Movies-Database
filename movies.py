@@ -130,7 +130,7 @@ def delete_movie() -> None:
 
 def update_movie() -> None:
     """
-    Update a movie's rating.
+    Update a movie's note.
 
     Prompts for the movie title and a new rating (0–10). If the movie
     exists, updates its rating in the JSON-backed storage; otherwise
@@ -142,9 +142,8 @@ def update_movie() -> None:
     *_, username = utils.get_current_user()
     movie_name = utils.colored_input("Enter movie name:", True)
     if storage.get_movie(movie_name):
-        new_movie_rating = utils.get_valid_number(
-            "Enter new rating:", float, True)
-        storage.update_movie(movie_name, new_movie_rating)
+        new_movie_note = utils.colored_input("Enter movie note:", True)
+        storage.update_movie(movie_name, new_movie_note)
     else:
         utils.colored_print(f"No movie called '{movie_name}' in "
                             f"{username}'s collection!", "ERROR", True)
