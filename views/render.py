@@ -88,7 +88,7 @@ def display_movie_list(
     for title, data in movies:
         rating, year = data['rating'], data['year']
         release_year = f" ({year})" if show_release_years else ""
-        movie_note = data.get('note', "Empty")
+        movie_note = "Empty" if data['note'] is None else data['note']
 
         colored_print(f"- {COLORS['MOVIE_TITLE']}{title}{release_year}:"
                       f" {COLORS['RATING']}{rating:.2f}\n"
