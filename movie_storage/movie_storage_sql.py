@@ -34,6 +34,7 @@ with engine.connect() as connection:
             'rating' REAL NOT NULL,
             'poster' TEXT NOT NULL,
             'note' TEXT,
+            'country_iso2' TEXT NOT NULL,
             PRIMARY KEY('id' AUTOINCREMENT),
             FOREIGN KEY('user_id') REFERENCES 'users'('id')
         );
