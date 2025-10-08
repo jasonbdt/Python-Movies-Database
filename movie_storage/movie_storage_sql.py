@@ -28,6 +28,7 @@ with engine.connect() as connection:
         CREATE TABLE IF NOT EXISTS movies (
             'id' INTEGER NOT NULL,
             'user_id' INTEGER NOT NULL,
+            'imdb_id' TEXT NOT NULL,
             'title' TEXT NOT NULL,
             'year' INTEGER NOT NULL,
             'rating' REAL NOT NULL,
@@ -58,13 +59,20 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
     }) for title, year, rating, poster, note in movies]
 
 
-def add_movie(title: str, year: int, rating: float, poster: str, note: str) -> None:
+def add_movie(
+    title: str,
+    year: int,
+    rating: float,
+    poster: str,
+    note: str,
+    imdb_id: str
+) -> None:
     """Add a new movie to the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
-                INSERT INTO movies (user_id, title, year, rating, poster, note)
-                VALUES (:user_id, :title, :year, :rating, :poster, :note)
+                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id)
+                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id)
                 """
         try:
             connection.execute(text(query), {
@@ -73,7 +81,8 @@ def add_movie(title: str, year: int, rating: float, poster: str, note: str) -> N
                 "year": year,
                 "rating": rating,
                 "poster": poster,
-                "note": None if note == "" else note
+                "note": None if note == "" else note,
+                "imdb_id": imdb_id
             })
             connection.commit()
             colored_print(f"Movie {title} successfully added "

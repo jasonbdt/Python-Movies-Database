@@ -5,7 +5,6 @@ import colorama
 import Levenshtein
 
 import movie_storage as storage
-# from views import display_welcome_message, display_menu
 from utils.app_types import NumType, NumRange, YearType, MoviesCollection
 
 COLORS = {
