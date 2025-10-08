@@ -156,7 +156,7 @@ def create_movies_grid() -> str:
     for title, data in storage.list_movies():
         note = "" if data['note'] is None else f"title='{data['note']}'"
         output += f"""<li><div class='movie'>
-          <a class='imdb-link' href='https://www.imdb.com/title/{data['imdb_id']}/' target='_blank'>
+          <a href='https://www.imdb.com/title/{data['imdb_id']}/' target='_blank'>
             <img class='movie-poster' src='{data['poster']}' {note}/>
           </a>
           <div class='movie-title'>{title}</div>
