@@ -28,7 +28,7 @@ with engine.connect() as connection:
         CREATE TABLE IF NOT EXISTS movies (
             'id' INTEGER NOT NULL,
             'user_id' INTEGER NOT NULL,
-            'title' TEXT NOT NULL UNIQUE,
+            'title' TEXT NOT NULL,
             'year' INTEGER NOT NULL,
             'rating' REAL NOT NULL,
             'poster' TEXT NOT NULL,
@@ -57,57 +57,77 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
 
 def add_movie(title: str, year: int, rating: float, poster: str) -> None:
     """Add a new movie to the database."""
+    user_id, username = utils.get_current_user()
     with engine.connect() as connection:
-        query = ("INSERT INTO movies (user_id, title, year, rating, poster) "
-                 "VALUES (:user_id, :title, :year, :rating, :poster)")
+        query = """
+                INSERT INTO movies (user_id, title, year, rating, poster)
+                VALUES (:user_id, :title, :year, :rating, :poster)
+                """
         try:
             connection.execute(text(query), {
-                "user_id": utils.get_current_user()[0],
+                "user_id": user_id,
                 "title": title,
                 "year": year,
                 "rating": rating,
                 "poster": poster
             })
             connection.commit()
-            colored_print(
-                f"Movie {title} successfully added.", "SUCCESS", True)
+            colored_print(f"Movie {title} successfully added "
+                          f"to {username}'s collection!", "SUCCESS", True)
         except Exception as err:
             colored_print(f"Error: {err}", "ERROR", True)
 
 
 def delete_movie(title: str) -> None:
     """Delete an existing movie from the database."""
+    user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = ("DELETE FROM movies WHERE LOWER(title) = :title "
                  "AND user_id = :user_id")
         try:
             connection.execute(text(query), {
-                "user_id": utils.get_current_user()[0],
+                "user_id": user_id,
                 "title": title.lower()
             })
             connection.commit()
-            colored_print(
-                f"Movie '{title}' successfully deleted.", "SUCCESS", True)
+            colored_print(f"Movie '{title}' successfully deleted from "
+                          f"{username}'s collection!", "SUCCESS", True)
         except Exception as err:
             colored_print(f"Error: {err}", "ERROR", True)
 
 
 def update_movie(title: str, rating: float) -> None:
     """Update an existing movie rating from the database."""
+    user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = ("UPDATE movies SET rating = :rating "
                  "WHERE LOWER(title) = :title AND user_id = :user_id")
         try:
             connection.execute(text(query), {
-                "user_id": utils.get_current_user()[0],
+                "user_id": user_id,
                 "title": title.lower(),
                 "rating": rating
             })
             connection.commit()
-            colored_print(
-                f"Movie '{title}' successfully updated", "SUCCESS", True)
+            colored_print(f"Movie '{title}' successfully updated in "
+                          f"{username}'s collection!", "SUCCESS", True)
         except Exception as err:
             colored_print(f"Error: {err}", "ERROR", True)
+
+
+def get_movie(title: str):
+    """Retrieve a single movie item from the database."""
+    user_id, *_ = utils.get_current_user()
+    with engine.connect() as connection:
+        query = """SELECT * FROM movies WHERE LOWER(title) = :title
+                AND user_id = :user_id"""
+        results = connection.execute(text(query), {
+            "title": title.lower(),
+            "user_id": user_id
+        })
+        movie = results.fetchone()
+
+    return movie
 
 
 def get_users() -> list[tuple[int, str]]:

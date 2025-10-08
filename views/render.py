@@ -3,6 +3,7 @@ from typing import Any
 from dotenv import load_dotenv
 from sqlalchemy import Row
 
+import utils
 from utils import CLICommand, COLORS, colored_print, MoviesCollection, get_user_menu
 load_dotenv()
 
@@ -74,9 +75,13 @@ def display_movie_list(
     show_total: bool = True,
     show_release_years: bool = False
 ) -> None:
-    if show_total:
-        colored_print(
-            f"{len(movies)} movies {COLORS['INFO']}in total", "HIGHLIGHT")
+    *_, username = utils.get_current_user()
+    if show_total and movies:
+        colored_print(f"{username}, you've {COLORS['HIGHLIGHT']}{len(movies)} "
+                      f"movies {COLORS['INFO']}in your collection:", "INFO")
+    else:
+        colored_print(f"{username}, your {COLORS['HIGHLIGHT']}movie collection"
+                      f" is empty{COLORS['INFO']}. Add some movies!", "INFO")
 
     for title, data in movies:
         rating, year = data['rating'], data['year']
@@ -84,6 +89,7 @@ def display_movie_list(
 
         colored_print(f"- {COLORS['MOVIE_TITLE']}{title}{release_year}:"
                       f" {COLORS['RATING']}{rating:.2f}")
+
     print()
 
 

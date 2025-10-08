@@ -69,19 +69,20 @@ def add_movie() -> None:
         utils.colored_print("\nPlease type in a movie name!", "ERROR", True)
         return
 
-    movies = storage.list_movies()
-    if movie_name in movies:
-        utils.colored_print("\nMovie already exist!", "ERROR", True)
-        return
-
-    movie_data = fetch_movie_data(movie_name)
-    if movie_data:
-        storage.add_movie(
-            movie_data["Title"],
-            movie_data["Year"],
-            movie_data["imdbRating"],
-            movie_data["Poster"]
-        )
+    if storage.get_movie(movie_name):
+        *_, username = utils.get_current_user()
+        utils.colored_print(
+            f"Movie '{movie_name}' already exist in {username}'s collection!",
+            color="ERROR", extra_break=True)
+    else:
+        movie_data = fetch_movie_data(movie_name)
+        if movie_data:
+            storage.add_movie(
+                movie_data["Title"],
+                movie_data["Year"],
+                movie_data["imdbRating"],
+                movie_data["Poster"]
+            )
 
 
 def fetch_movie_data(title: str):
@@ -115,8 +116,14 @@ def delete_movie() -> None:
     Returns:
         None
     """
+    *_, username = utils.get_current_user()
     movie_name = utils.colored_input("Enter movie name to delete:", True)
-    storage.delete_movie(movie_name)
+    if storage.get_movie(movie_name):
+        storage.delete_movie(movie_name)
+    else:
+        utils.colored_print(
+            f"No movie called '{movie_name}' in {username}'s collection!",
+            color="ERROR", extra_break=True)
 
 
 def update_movie() -> None:
@@ -130,16 +137,15 @@ def update_movie() -> None:
     Returns:
         None
     """
-    movies = storage.list_movies()
+    *_, username = utils.get_current_user()
     movie_name = utils.colored_input("Enter movie name:", True)
-
-    if movie_name.title() in movies:
+    if storage.get_movie(movie_name):
         new_movie_rating = utils.get_valid_number(
             "Enter new rating:", float, True)
         storage.update_movie(movie_name, new_movie_rating)
     else:
-        utils.colored_print(
-            f"Movie {movie_name} doesn't exist!", "ERROR", True)
+        utils.colored_print(f"No movie called '{movie_name}' in "
+                            f"{username}'s collection!", "ERROR", True)
 
 
 def compute_movie_stats() -> None:
@@ -153,17 +159,17 @@ def compute_movie_stats() -> None:
         None
     """
     movies = storage.list_movies()
-    ratings = [movie_data['rating'] for movie_data in movies.values()]
+    sorted_movies = sorted(movies, key=lambda movie: movie[1]['rating'])
+    ratings = list(map(lambda movie: movie[1]['rating'], sorted_movies))
+    ratings.sort(reverse=True)
+
     average_rating = round(sum(ratings) / len(ratings), 2)
     median_rating = utils.calc_median_rating(ratings)
-    best_movies = [
-        f"{name} ({data['rating']:.1f})" for name, data in movies.items()
-        if data['rating'] == max(ratings)
-    ]
-    worst_movies = [
-        f"{name} ({data['rating']:.1f})" for name, data in movies.items()
-        if data['rating'] == min(ratings)
-    ]
+    best_movies = list(map(lambda movie: movie[0], filter(
+        lambda movie: movie[1]['rating'] == ratings[0], sorted_movies)))
+
+    worst_movies = list(map(lambda movie: movie[0], filter(
+        lambda movie: movie[1]['rating'] == ratings[-1], sorted_movies)))
 
     views.display_movie_stats(
         (average_rating, median_rating, best_movies, worst_movies)
@@ -172,9 +178,9 @@ def compute_movie_stats() -> None:
 
 def random_movie() -> None:
     movies = storage.list_movies()
-    movie_names = list(map(lambda movie: movie, movies))
-    rnd_movie = random.choice(movie_names)
-    views.display_random_movie(rnd_movie, movies[rnd_movie]['rating'])
+    rnd_movie = random.choice(movies)
+    title, movie_data = rnd_movie
+    views.display_random_movie(title, movie_data['rating'])
 
 
 def search_movie() -> None:
@@ -360,7 +366,8 @@ def generate_website() -> None:
         template = template.replace("__TEMPLATE_TITLE__", app_title)
         template = template.replace("__TEMPLATE_MOVIE_GRID__", movies_grid)
 
-        with open("static/index.html", "w") as file_obj:
+        *_, username = utils.get_current_user()
+        with open(f"static/{username}.html", "w") as file_obj:
             file_obj.write(template)
             utils.colored_print(
                 "Website was generated successfully.", "SUCCESS", True)
