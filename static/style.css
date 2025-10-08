@@ -50,3 +50,13 @@ body {
     width: 128px;
     height: 193px;
 }
+
+.movie-rating {
+    text-align: center;
+    font-size: .8rem;
+}
+
+.fa-star {
+    color: #f1c708;
+    text-shadow: 0px 1px 1px #999;
+}
