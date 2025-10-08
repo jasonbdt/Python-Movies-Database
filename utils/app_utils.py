@@ -156,7 +156,7 @@ def create_movies_grid() -> str:
     output = ""
     for title, data in storage.list_movies():
         output += f"""<li><div class='movie'>
-          <img class='movie-poster' src='{data['poster']}' />
+          <img class='movie-poster' src='{data['poster']}' title='{data['note']}' />
           <div class='movie-title'>{title}</div>
           <div class='movie-year'>{data['year']}</div>
         </div></li>"""
