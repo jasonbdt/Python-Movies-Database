@@ -112,9 +112,10 @@ All movies are stored per user inside a local SQLite database file.
 ### 📊 Example Output
 
 ```bash
----------------------------------------
-     🎬  Movies Database CLI
----------------------------------------
+Welcome to the Movie App! 🎬
+
+...
+
 1. List movies
 2. Add movie
 3. Delete movie
@@ -144,11 +145,10 @@ Unit tests may be added later using **pytest**.
 The following environment variables are required for API access:
 
 
-| Variable       | Description                            |
-|----------------|----------------------------------------|
-| OMDB_API_KEY   | Your OMDb API key                      |
-| NINJAS_API_KEY | Your API Ninjas key for country lookup |
-| APP_TITLE      | (Optional) Custom CLI header title     |
+| Variable      | Description                            |
+|---------------|----------------------------------------|
+| API_KEY       | Your OMDb API key                      |
+| API_NINJA_KEY | Your API Ninjas key for country lookup |
 
 You can place them in a .env file or export them in your shell.
 
