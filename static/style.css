@@ -39,6 +39,14 @@ body {
 
 .movie-title {
   margin-top: 10px;
+  display: flex;
+  place-content: center;
+  align-items: center;
+}
+
+.movie-title img {
+    height: 20px;
+    margin-left: .625rem
 }
 
 .movie-year {

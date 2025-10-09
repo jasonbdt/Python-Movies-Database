@@ -45,7 +45,7 @@ with engine.connect() as connection:
 def list_movies() -> list[tuple[str, dict[str, Any]]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        query = """SELECT title, year, rating, poster, note, imdb_id
+        query = """SELECT title, year, rating, poster, note, imdb_id, country_iso2
                    FROM movies WHERE user_id = :user_id"""
         results = connection.execute(text(query), {
             "user_id": utils.get_current_user()[0]
@@ -57,8 +57,9 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
         "rating": rating,
         "poster": poster,
         "note": note,
-        "imdb_id": imdb_id
-    }) for title, year, rating, poster, note, imdb_id in movies]
+        "imdb_id": imdb_id,
+        "country_iso2": country_iso2
+    }) for title, year, rating, poster, note, imdb_id, country_iso2 in movies]
 
 
 def add_movie(

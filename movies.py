@@ -80,7 +80,7 @@ def add_movie() -> None:
         if movie_data:
             country_iso2 = requests.get(
                 "https://api.api-ninjas.com/v1/country",
-                params={"name": movie_data["Country"]},
+                params={"name": movie_data["Country"].split(',')[0].strip()},
                 headers={"X-Api-Key": os.getenv("API_NINJA_KEY")}
             )
 
