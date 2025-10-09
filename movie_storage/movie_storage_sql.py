@@ -18,7 +18,7 @@ load_dotenv()
 DB_URL = "sqlite:///data/movies.db"
 
 # Create the engine
-engine = create_engine(DB_URL, echo=bool(os.getenv("DEBUG_SQL")))
+engine = create_engine(DB_URL, echo=False)
 
 # Create the `movies` and `users` table if they does not exist
 with engine.connect() as connection:
