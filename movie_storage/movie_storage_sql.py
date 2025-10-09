@@ -34,6 +34,7 @@ with engine.connect() as connection:
             'rating' REAL NOT NULL,
             'poster' TEXT NOT NULL,
             'note' TEXT,
+            'country_iso2' TEXT NOT NULL,
             PRIMARY KEY('id' AUTOINCREMENT),
             FOREIGN KEY('user_id') REFERENCES 'users'('id')
         );
@@ -44,7 +45,7 @@ with engine.connect() as connection:
 def list_movies() -> list[tuple[str, dict[str, Any]]]:
     """Retrieve all movies from the database."""
     with engine.connect() as connection:
-        query = """SELECT title, year, rating, poster, note, imdb_id
+        query = """SELECT title, year, rating, poster, note, imdb_id, country_iso2
                    FROM movies WHERE user_id = :user_id"""
         results = connection.execute(text(query), {
             "user_id": utils.get_current_user()[0]
@@ -56,8 +57,9 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
         "rating": rating,
         "poster": poster,
         "note": note,
-        "imdb_id": imdb_id
-    }) for title, year, rating, poster, note, imdb_id in movies]
+        "imdb_id": imdb_id,
+        "country_iso2": country_iso2
+    }) for title, year, rating, poster, note, imdb_id, country_iso2 in movies]
 
 
 def add_movie(
@@ -66,14 +68,15 @@ def add_movie(
     rating: float,
     poster: str,
     note: str,
-    imdb_id: str
+    imdb_id: str,
+    country: str
 ) -> None:
     """Add a new movie to the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
-                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id)
-                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id)
+                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id, country_iso2)
+                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id, :country_iso2)
                 """
         try:
             connection.execute(text(query), {
@@ -83,7 +86,8 @@ def add_movie(
                 "rating": rating,
                 "poster": poster,
                 "note": None if note == "" else note,
-                "imdb_id": imdb_id
+                "imdb_id": imdb_id,
+                "country_iso2": country
             })
             connection.commit()
             colored_print(f"Movie {title} successfully added "

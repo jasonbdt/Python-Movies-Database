@@ -159,7 +159,10 @@ def create_movies_grid() -> str:
           <a href='https://www.imdb.com/title/{data['imdb_id']}/' target='_blank'>
             <img class='movie-poster' src='{data['poster']}' {note}/>
           </a>
-          <div class='movie-title'>{title}</div>
+          <div class='movie-title'>
+            {title}
+            <img src="https://flagsapi.com/{data['country_iso2']}/shiny/64.png" />
+          </div>
           <div class='movie-year'>{data['year']}</div>
           <div class='movie-rating'>
             <span>Rated:</span> {data['rating']}

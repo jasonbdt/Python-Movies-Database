@@ -78,14 +78,25 @@ def add_movie() -> None:
         movie_data = fetch_movie_data(movie_name)
         note = utils.colored_input("Enter movie note:", extra_whitespace=True)
         if movie_data:
-            storage.add_movie(
-                movie_data["Title"],
-                movie_data["Year"],
-                movie_data["imdbRating"],
-                movie_data["Poster"],
-                note,
-                movie_data["imdbID"]
+            country_iso2 = requests.get(
+                "https://api.api-ninjas.com/v1/country",
+                params={"name": movie_data["Country"].split(',')[0].strip()},
+                headers={"X-Api-Key": os.getenv("API_NINJA_KEY")}
             )
+
+            if country_iso2.ok:
+                storage.add_movie(
+                    movie_data["Title"],
+                    movie_data["Year"],
+                    movie_data["imdbRating"],
+                    movie_data["Poster"],
+                    note,
+                    movie_data["imdbID"],
+                    country_iso2.json()[0]['iso2']
+                )
+            else:
+                utils.colored_print(
+                    "Unable to fetch movies origin country", "ERROR", True)
 
 
 def fetch_movie_data(title: str):
