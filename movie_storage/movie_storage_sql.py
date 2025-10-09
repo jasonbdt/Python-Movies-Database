@@ -67,14 +67,15 @@ def add_movie(
     rating: float,
     poster: str,
     note: str,
-    imdb_id: str
+    imdb_id: str,
+    country: str
 ) -> None:
     """Add a new movie to the database."""
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
-                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id)
-                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id)
+                INSERT INTO movies (user_id, title, year, rating, poster, note, imdb_id, country_iso2)
+                VALUES (:user_id, :title, :year, :rating, :poster, :note, :imdb_id, :country_iso2)
                 """
         try:
             connection.execute(text(query), {
@@ -84,7 +85,8 @@ def add_movie(
                 "rating": rating,
                 "poster": poster,
                 "note": None if note == "" else note,
-                "imdb_id": imdb_id
+                "imdb_id": imdb_id,
+                "country_iso2": country
             })
             connection.commit()
             colored_print(f"Movie {title} successfully added "

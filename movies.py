@@ -91,7 +91,8 @@ def add_movie() -> None:
                     movie_data["imdbRating"],
                     movie_data["Poster"],
                     note,
-                    movie_data["imdbID"]
+                    movie_data["imdbID"],
+                    country_iso2.json()[0]['iso2']
                 )
             else:
                 utils.colored_print(
