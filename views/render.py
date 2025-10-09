@@ -1,3 +1,9 @@
+"""
+Console rendering helpers for the Movies Database CLI.
+
+Functions in this module are pure view concerns: they print formatted text
+to the terminal based on domain data passed in from commands.
+"""
 import os
 from typing import Any
 from dotenv import load_dotenv
@@ -7,12 +13,9 @@ import utils
 from utils import CLICommand, COLORS, colored_print, MoviesCollection, get_user_menu
 load_dotenv()
 
-def display_app_title() -> None:
-    title = os.getenv("APP_TITLE")
-    colored_print(f" {title} ".center(40, "*"), "TITLE", True)
-
 
 def display_welcome_message() -> None:
+    """Print a generic welcome banner for the application."""
     colored_print("Welcome to the Movie App! 🎬", "TITLE", True)
 
 
@@ -21,17 +24,15 @@ def display_menu(
     label: str = "Menu"
 ) -> None:
     """
-    Display a menu and its indexed options.
-
-    Prints each entry of the provided ``menu`` (a list of labels or the keys of a
-    command dictionary) with its numeric index under the given ``prompt`` header.
+    Display a labeled, indexed list of menu items.
 
     Args:
-        items (dict[str, CLICommand] | list[str]): The items to display.
-        label (str, optional): Heading shown above the list. Defaults to "Menu".
+        items: Either a mapping of command labels to command tuples, or a list
+            of plain strings/rows to render.
+        label: Heading shown above the list.
 
-    Returns:
-        None
+    Notes:
+        This function writes directly to stdout.
     """
     colored_print(f"{label}:", "MENU")
     for item_num, item_text in enumerate(items):
@@ -40,6 +41,12 @@ def display_menu(
 
 
 def display_movie_stats(movie_stats) -> None:
+    """
+    Print aggregate statistics for the current movie collection.
+
+    Args:
+        movie_stats: A 4-tuple ``(average, median, best_titles, worst_titles)``.
+    """
     avg_rating, median_rating, best_movies, worst_movies = movie_stats
     delimiter = f"{COLORS['RESET']}, {COLORS['RATING']}"
 
@@ -63,6 +70,7 @@ def display_movie_stats(movie_stats) -> None:
 
 
 def display_random_movie(title: str, rating: float) -> None:
+    """Print a one-line suggestion for a randomly chosen movie."""
     movie_str = f"{COLORS['MOVIE_TITLE']}{title}{COLORS['INFO']}"
     movie_rating = f"{COLORS['RATING']}{rating:.2f}"
 
@@ -75,6 +83,17 @@ def display_movie_list(
     show_total: bool = True,
     show_release_years: bool = False
 ) -> None:
+    """
+    Print a list of movies with rating (and optionally the release year).
+
+    Args:
+        movies: Sequence of ``(title, data)`` pairs.
+        show_total: If True, prints a header with the number of movies.
+        show_release_years: If True, includes the year after the title.
+
+    Notes:
+        Purely presentational; no return value.
+    """
     *_, username = utils.get_current_user()
     if show_total:
         if movies:
@@ -98,6 +117,7 @@ def display_movie_list(
 
 
 def display_select_user(users) -> None:
+    """Render the user selection screen and its menu."""
     menu_items, *_ = get_user_menu(users)
     display_welcome_message()
     display_menu(menu_items, "Select a user")

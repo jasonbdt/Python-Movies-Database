@@ -1,3 +1,11 @@
+"""
+High-level CLI commands (use cases) for the Movies Database app.
+
+This module wires user input/output (via `utils` and `views`) with the
+persistence layer (`movie_storage`). Each function represents a user-facing
+command that can be bound to the main menu.
+"""
+
 from datetime import datetime
 import random
 
@@ -20,13 +28,13 @@ MIN_YEAR = 1888
 
 def get_user_choice() -> utils.CLICommand:
     """
-    Prompt the user to select a menu option.
+    Return the selected CLI command from the main menu.
 
-    Prompts for an integer between 0 and ``len(COMMANDS) - 1`` and
-    returns the corresponding CLI command from ``COMMANDS``.
+    Prompts the user for an integer between 0 and ``len(COMMANDS) - 1`` and
+    returns the corresponding (callable, description) tuple.
 
     Returns:
-        CLICommand: The selected command (callable and its description).
+        CLICommand: The command tuple selected by the user.
     """
     max_choice = len(COMMANDS) - 1
     result = utils.get_valid_number(
@@ -43,11 +51,8 @@ def list_movies() -> None:
     """
     List all movies with their year and rating.
 
-    Loads movies from the JSON-backed storage and prints the total count
-    and each movie in the format "Title (Year): Rating".
-
-    Returns:
-        None
+    Loads movies from storage and displays them in a formatted list. Prints the
+    total count first and then each entry as "Title (Year): Rating".
     """
     movies = storage.list_movies()
     views.display_movie_list(movies)
@@ -57,12 +62,17 @@ def add_movie() -> None:
     """
     Add a new movie to the collection.
 
-    Prompts for the movie title, a rating (0–10), and a release year
-    between ``MIN_YEAR`` and the current year. Persists the movie to the
-    JSON-backed storage.
+    Prompts the user for a title and a note. Attempts to fetch metadata from
+    OMDb (title, year, rating, poster, IMDb ID, country). If successful, the
+    movie is stored for the current user.
 
-    Returns:
-        None
+    Side Effects:
+        - Performs HTTP requests to OMDb and API Ninjas (country ISO2).
+        - Writes a new record to the database on success.
+        - Prints user feedback to the console.
+
+    Raises:
+        None. Errors are reported as user-facing messages.
     """
     movie_name = utils.colored_input("Enter new movie name:")
     if movie_name == "":
@@ -100,6 +110,19 @@ def add_movie() -> None:
 
 
 def fetch_movie_data(title: str):
+    """
+    Fetch movie metadata from OMDb by exact title.
+
+    Args:
+        title: Exact movie title to query.
+
+    Returns:
+        dict | None: The OMDb response payload when found, otherwise ``None``.
+
+    Notes:
+        Connection errors and "not found" cases are handled with user-facing
+        console messages and return ``None``.
+    """
     try:
         response = requests.get(f"{API_BASE}", params={
             "apikey": API_KEY,
@@ -122,13 +145,10 @@ def fetch_movie_data(title: str):
 
 def delete_movie() -> None:
     """
-    Delete a movie from the collection.
+    Delete a movie owned by the current user.
 
-    Prompts for the movie title and removes it from the JSON-backed
-    storage.
-
-    Returns:
-        None
+    Prompts for the title and removes it from storage if present; otherwise
+    prints an error message.
     """
     *_, username = utils.get_current_user()
     movie_name = utils.colored_input("Enter movie name to delete:", True)
@@ -142,14 +162,10 @@ def delete_movie() -> None:
 
 def update_movie() -> None:
     """
-    Update a movie's note.
+    Update the note of an existing movie.
 
-    Prompts for the movie title and a new rating (0–10). If the movie
-    exists, updates its rating in the JSON-backed storage; otherwise
-    prints an error.
-
-    Returns:
-        None
+    Prompts for a title and the new note value. If the movie exists, updates
+    its note; otherwise prints an error.
     """
     *_, username = utils.get_current_user()
     movie_name = utils.colored_input("Enter movie name:", True)
@@ -163,13 +179,10 @@ def update_movie() -> None:
 
 def compute_movie_stats() -> None:
     """
-    Display summary statistics for the stored movies.
+    Compute and display summary statistics over stored movies.
 
-    Loads movies from storage and prints the average and median rating,
-    as well as the best and worst rated movie titles.
-
-    Returns:
-        None
+    Shows average rating, median rating, and the list of best/worst rated
+    titles among the current user's collection.
     """
     movies = storage.list_movies()
     sorted_movies = sorted(movies, key=lambda movie: movie[1]['rating'])
@@ -190,6 +203,7 @@ def compute_movie_stats() -> None:
 
 
 def random_movie() -> None:
+    """Pick and display a random movie from the current collection."""
     movies = storage.list_movies()
     rnd_movie = random.choice(movies)
     title, movie_data = rnd_movie
@@ -198,15 +212,10 @@ def random_movie() -> None:
 
 def search_movie() -> None:
     """
-    Search for movies by substring and show fuzzy suggestions if needed.
+    Search stored movies by substring with fuzzy fallbacks.
 
-    Prompts the user for a substring and displays direct matches against stored
-    titles (simple substring check). If no matches are found, computes fuzzy
-    suggestions using ``Levenshtein.ratio`` with ``SEARCH_THRESHOLD`` and displays
-    them.
-
-    Returns:
-        None
+    If literal substring search yields no results, computes fuzzy suggestions
+    via Levenshtein ratio using the configured threshold and displays those.
     """
     movies = storage.list_movies()
     search_results = []
@@ -236,16 +245,14 @@ def search_movie() -> None:
 
 def filter_movies() -> None:
     """
-    Retrieve movies from storage and apply optional rating/year filters.
+    Filter stored movies by optional rating and year bounds.
 
-    Prompts the user for an optional minimum rating and optional start/end
-    years. Blank inputs are allowed and interpreted as "no filter"
-    (internally a sentinel value is used). Each provided criterion is
-    applied in sequence to narrow the results.
+    Interactively collects:
+      * minimum rating,
+      * start year (inclusive),
+      * end year (inclusive).
 
-    Returns:
-        dict[str, dict]: Mapping of movie titles to their data that match the
-            provided criteria.
+    Blank input is treated as "no constraint". Matching movies are displayed.
     """
     movies = storage.list_movies()
     current_year = datetime.now().year
@@ -295,12 +302,7 @@ def filter_movies() -> None:
 
 
 def movies_by_rating() -> None:
-    """
-    Display all movies sorted by rating (descending).
-
-    Returns:
-        None
-    """
+    """Display all movies sorted by rating (descending)."""
     movies = storage.list_movies()
     sorted_movies = sorted(
         movies,
@@ -314,12 +316,8 @@ def movies_by_year() -> None:
     """
     Display all movies sorted by release year.
 
-    Prompts the user to choose the ordering ("First" => newest first,
-    "Last" => oldest first). Loads movies via ``movie_storage``, sorts by
-    the ``year`` field, and prints each entry as "Title (Year): Rating".
-
-    Returns:
-        None
+    Asks the user whether to show newest first or oldest first, then prints
+    the list accordingly.
     """
     user_choices = ["First", "Last"]
     movies = storage.list_movies()
@@ -342,14 +340,13 @@ def movies_by_year() -> None:
 
 def create_rating_histogram() -> None:
     """
-    Create and save a histogram of movie ratings.
+    Create and save a histogram of all movie ratings.
 
-    Prompts for an output filename, builds a histogram of all stored
-    movie ratings using Matplotlib, and saves it with ``plt.savefig``.
-    Prints an error if no filename is provided.
+    Prompts for an output filename, builds a Matplotlib histogram from the
+    current user's ratings and saves it with ``plt.savefig(<filename>)``.
 
-    Returns:
-        None
+    Notes:
+        The function prints a validation error if the filename is empty.
     """
     file_name = utils.colored_input(
         "In which file do you want to save the histogram?:"
@@ -366,6 +363,17 @@ def create_rating_histogram() -> None:
 
 
 def generate_website() -> None:
+    """
+    Generate a static HTML page listing all movies.
+
+    Reads the template at ``static/index_template.html``, replaces placeholders
+    with the configured title and a generated movie grid, and writes the file
+    as ``static/<username>.html``.
+
+    Side Effects:
+        Reads and writes files under the ``static`` directory and prints
+        user-facing status messages.
+    """
     try:
         with open("static/index_template.html", "r") as file_obj:
             template = file_obj.read()
@@ -388,15 +396,10 @@ def generate_website() -> None:
 
 def start_app() -> None:
     """
-    Start the interactive movie application loop.
+    Enter the main application loop.
 
-    Displays the title, then repeatedly shows the menu, reads the user's
-    choice, and executes the selected command. Movie data is read from
-    and written to a JSON file via ``movie_storage`` during
-    these operations.
-
-    Returns:
-        None
+    Displays the menu, processes commands for the current user, or shows the
+    user selection screen if no user is logged in.
     """
     while True:
         if utils.get_current_user():
@@ -414,15 +417,15 @@ def start_app() -> None:
 
 def exit_app() -> None:
     """
-    Exit the application with a goodbye message.
+    Exit the application after printing a goodbye message.
 
-    Returns:
-        None
+    This function terminates the process with ``sys.exit(0)``.
     """
     utils.colored_print("Good bye!", "HIGHLIGHT")
     sys.exit(0)
 
 
+# COMMANDS maps menu labels to (callable, description) tuples consumed by the UI.
 COMMANDS: dict[str, utils.CLICommand] = {
     "Exit App": (
         exit_app,

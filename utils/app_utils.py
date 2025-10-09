@@ -1,3 +1,14 @@
+"""
+Utility functions for console I/O, validation, and simple computations.
+
+This module centralizes:
+- colored console input/output,
+- numeric input validation,
+- basic statistics helpers,
+- fuzzy search helpers,
+- current-user handling for the CLI,
+- small HTML grid generation used by the static site generator.
+"""
 from typing import Any
 import sys
 
@@ -30,16 +41,19 @@ __current_user: tuple[int, str] | None = None
 
 def calc_median_rating(ratings: list[float]) -> float:
     """
-    Compute the median of a list of ratings.
+    Return the median of a non-empty list of ratings.
 
-    Sorts the ratings; for an even count returns the mean of the two
-    middle values, otherwise returns the middle value.
+    For even-sized lists, returns the mean of the two middle values; for
+    odd-sized lists, returns the middle value.
 
     Args:
-        ratings (list[float]): List of movie ratings.
+        ratings: Non-empty list of numeric ratings.
 
     Returns:
         float: The median rating.
+
+    Raises:
+        ValueError: If ``ratings`` is empty.
     """
     sorted_rankings = sorted(ratings)
 
@@ -59,22 +73,15 @@ def colored_input(
     extra_whitespace: bool = True
 ) -> str:
     """
-    Prompt the user for input with colored text.
-
-    The prompt message is wrapped in the ANSI color code for
-    ``USER_INPUT`` from the global ``COLORS`` dictionary. An
-    optional trailing whitespace can be added for readability,
-    and an extra newline can be printed after the input.
+    Prompt the user and return the raw input string with styled prompt.
 
     Args:
-        msg (str): The prompt message displayed to the user.
-        extra_break (bool, optional): If True, prints an extra
-            newline after the input. Defaults to False.
-        extra_whitespace (bool, optional): If True, appends a
-            trailing space to the prompt. Defaults to True.
+        msg: The message displayed to the user.
+        extra_break: If True, print an extra newline after reading input.
+        extra_whitespace: If True, append a trailing space to the prompt.
 
     Returns:
-        str: The user input as a string.
+        str: The user input as typed.
     """
     whitespace = " " if extra_whitespace else ""
     result = input(
@@ -92,23 +99,12 @@ def colored_print(
     extra_break: bool = False
 ) -> None:
     """
-    Print a message with the given color.
-
-    The message is wrapped in the specified ANSI color code from the
-    global ``COLORS`` dictionary. If ``color`` is set to "SUCCESS",
-    the message is padded with a leading and trailing space. After
-    printing, an additional line break is added if ``extra_break``
-    is True.
+    Print a message using the configured ANSI color palette.
 
     Args:
-        msg (str): The message text to print.
-        color (str, optional): The color key from ``COLORS``. Defaults
-            to "DEFAULT".
-        extra_break (bool, optional): If True, adds an extra newline
-            after the message. Defaults to False.
-
-    Returns:
-        None
+        msg: The message to print.
+        color: Key into the global ``COLORS`` palette.
+        extra_break: If True, append an extra newline after printing.
     """
     whitespace = " " if color == "SUCCESS" else ""
     print(
@@ -124,20 +120,20 @@ def compute_suggestions(
     movies: list[tuple[str, dict[str, Any]]]
 ) -> MoviesCollection:
     """
-    Compute fuzzy movie title suggestions for a search term.
+    Return fuzzy title suggestions for a search term.
 
-    Splits each stored title into lowercase tokens and uses
-    ``Levenshtein.ratio`` with ``score_cutoff=SEARCH_THRESHOLD`` to test
-    similarity against the search term. If any token meets the threshold,
-    the movie is included.
+    Splits each title into tokens and tests similarity with
+    ``Levenshtein.ratio`` using ``score_cutoff=SEARCH_THRESHOLD``. If any token
+    meets the cutoff for a given title, that title is included.
 
     Args:
-        search_term (str): The user's search term.
+        search_term: The user-provided query.
+        movies: The (title, data) pairs to test.
 
     Returns:
-        SearchResults: A dictionary of suggested movies keyed by title.
+        MoviesCollection: A list of ``(title, data)`` suggestions.
     """
-    computed_suggestions: SearchResults = []
+    computed_suggestions = []
     for title, data in movies:
         tokens = title.lower().split()
         for word in tokens:
@@ -152,6 +148,12 @@ def compute_suggestions(
 
 
 def create_movies_grid() -> str:
+    """
+    Build the HTML snippet used to render the movies grid in the template.
+
+    Returns:
+        str: A concatenated HTML fragment (no surrounding `<html>`).
+    """
     output = ""
     for title, data in storage.list_movies():
         note = "" if data['note'] is None else f"title='{data['note']}'"
@@ -175,13 +177,13 @@ def create_movies_grid() -> str:
 
 def is_even(collection: list) -> bool:
     """
-    Return True if the length of the collection is even.
+    Return True if the collection length is even, False otherwise.
 
     Args:
-        collection (list): The sequence to check.
+        collection: Any sequence with a defined length.
 
     Returns:
-        bool: True if ``len(collection)`` is even, False otherwise.
+        bool: Whether ``len(collection) % 2 == 0``.
     """
     return len(collection) % 2 == 0
 
@@ -195,28 +197,25 @@ def get_valid_number(
     allow_empty: bool = False
 ) -> int | float | None:
     """
-    Prompt the user for a number until a valid input is provided.
+    Prompt until a valid numeric input (or empty if allowed) is provided.
 
-    The input is repeatedly requested until it can be cast to
-    ``num_type``. If ``with_range`` is True, the input must lie
-    within the given numeric range.
+    Converts the input to ``num_type`` and optionally enforces a closed
+    interval constraint.
 
     Args:
-        prompt (str): The message displayed to the user.
-        num_type (NumType, optional): The target type of the number
-            (``int`` or ``float``). Defaults to ``int``.
-        with_range (bool, optional): If True, restricts the input to
-            ``num_range``. Defaults to False.
-        display_range (bool, optional): If True, appends the range to
-            the prompt message (e.g. "Enter a number (0-10):").
-            Defaults to True.
-        num_range (NumRange, optional): A tuple ``(min, max)`` defining
-            the valid range. Defaults to ``(0, 10)``.
-        allow_empty (bool, optional): If True, user can leave the
-            input empty without getting repeatedly requested.
+        prompt: Message shown to the user.
+        num_type: Target cast type (``int`` or ``float``).
+        with_range: If True, enforce the ``num_range`` constraint.
+        display_range: If True, append the range to the prompt text.
+        num_range: Inclusive ``(min, max)`` bounds when ``with_range`` is True.
+        allow_empty: If True, return ``None`` for a blank input.
 
     Returns:
-        int | float | None: The validated user input.
+        int | float | None: The parsed number, or ``None`` when blank input is
+        allowed and provided.
+
+    Notes:
+        Invalid inputs are re-prompted without raising.
     """
     while True:
         if with_range:
@@ -252,17 +251,14 @@ def get_valid_number(
 
 def filter_by_rating(movie, min_rating: float) -> bool:
     """
-    Return True if the movie's rating meets the minimum threshold.
-
-    Expects a ``(title, data)`` pair as yielded by ``dict.items()``,
-    where ``data`` contains a ``'rating'`` key.
+    Return True if the movie's rating is at least ``min_rating``.
 
     Args:
-        movie (tuple[str, dict]): A (title, data) pair from the movies mapping.
-        min_rating (float): Inclusive lower bound for the rating.
+        movie: A ``(title, data)`` pair where ``data['rating']`` is a float.
+        min_rating: Inclusive lower bound for the rating.
 
     Returns:
-        bool: True if ``data['rating'] >= min_rating``, otherwise False.
+        bool: True if the rating passes, otherwise False.
     """
     title, data = movie
     if data['rating'] >= min_rating:
@@ -273,24 +269,16 @@ def filter_by_rating(movie, min_rating: float) -> bool:
 
 def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
     """
-    Return True if the movie's year satisfies the given bound.
-
-    When ``year_type`` is ``'start'``, the movie passes if its year is
-    greater than or equal to ``year`` (lower bound). When ``year_type``
-    is ``'end'``, the movie passes if its year is less than or equal to
-    ``year`` (upper bound).
+    Return True if the movie's year satisfies the specified bound.
 
     Args:
-        movie (tuple[str, dict]): A (title, data) pair from
-            the movies mapping.
-        year (int): The boundary year to compare against.
-        year_type (YearType, optional): ``'start'`` for a lower bound
-            (``>= year``) or ``'end'`` for an upper bound (``<= year``).
-            Defaults to ``'start'``.
+        movie: A ``(title, data)`` pair where ``data['year']`` is an int.
+        year: The comparison year.
+        year_type: ``'start'`` for ``>= year`` (lower bound) or ``'end'`` for
+            ``<= year`` (upper bound).
 
     Returns:
-        bool: True if the movie satisfies the specified bound,
-            otherwise False.
+        bool: True if the movie passes the bound, otherwise False.
     """
     title, data = movie
     if year_type == 'start':
@@ -304,6 +292,15 @@ def filter_by_year(movie, year: int, year_type: YearType = 'start') -> bool:
 
 
 def get_user_menu(users):
+    """
+    Return the menu labels for the user selector and the index of 'create'.
+
+    Args:
+        users: Sequence of ``(id, name)`` tuples.
+
+    Returns:
+        tuple[list[str], int]: A pair of (menu labels, index of "Create new user").
+    """
     users_str = list(map(lambda user: user[1], users))
     users_str.append("Create new user")
 
@@ -311,6 +308,12 @@ def get_user_menu(users):
 
 
 def select_user(users) -> None:
+    """
+    Prompt the user to select an existing profile or create a new one.
+
+    On blank input, exits the application gracefully. On "create", prompts for
+    a name and persists a new user; otherwise selects the chosen existing user.
+    """
     *_, last_item_idx = get_user_menu(users)
     user_id = get_valid_number("Enter choice (or leave blank to exit app)",
                                 with_range=True,
@@ -329,14 +332,22 @@ def select_user(users) -> None:
 
 
 def get_current_user() -> tuple[int, str]:
+    """Return the current user as ``(id, name)`` or ``None`` if not set."""
     return __current_user
 
 
 def set_current_user(user: tuple[int, str] | None) -> None:
+    """
+    Set the current user used by the CLI session.
+
+    Args:
+        user: ``(id, name)`` tuple or ``None`` to clear.
+    """
     global __current_user
     __current_user = user
 
 
 def logout_user() -> None:
+    """Clear the current user and print a confirmation message."""
     set_current_user(None)
     colored_print("Logged out successfully!", "SUCCESS", True)

@@ -1,3 +1,9 @@
+"""
+Typed aliases for the CLI application.
+
+Centralizes callable signatures and common collection shapes used across the
+UI and command layers.
+"""
 from typing import Any, Callable, Literal
 
 CLIFunction = Callable[..., Any]

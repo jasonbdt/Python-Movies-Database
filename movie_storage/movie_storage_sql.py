@@ -1,3 +1,9 @@
+"""
+SQLite-backed persistence layer for users and movies.
+
+Creates tables on module import (idempotent) and exposes CRUD operations used
+by the CLI commands. Uses SQLAlchemy Core and a file-based SQLite database.
+"""
 from typing import Any
 import os
 
@@ -43,7 +49,12 @@ with engine.connect() as connection:
 
 
 def list_movies() -> list[tuple[str, dict[str, Any]]]:
-    """Retrieve all movies from the database."""
+    """
+    Return all movies of the current user as ``(title, data)`` pairs.
+
+    The ``data`` dict contains: ``year``, ``rating``, ``poster``, ``note``,
+    ``imdb_id``, ``country_iso2``.
+    """
     with engine.connect() as connection:
         query = """SELECT title, year, rating, poster, note, imdb_id, country_iso2
                    FROM movies WHERE user_id = :user_id"""
@@ -71,7 +82,21 @@ def add_movie(
     imdb_id: str,
     country: str
 ) -> None:
-    """Add a new movie to the database."""
+    """
+    Insert a new movie for the current user.
+
+    Args:
+        title: Movie title.
+        year: Release year.
+        rating: Normalized rating (e.g. IMDb 0–10).
+        poster: Poster URL.
+        note: Optional note (empty string stored as NULL).
+        imdb_id: IMDb identifier.
+        country: ISO-3166-1 alpha-2 country code.
+
+    Side Effects:
+        Writes to the database and prints a success or error message.
+    """
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = """
@@ -97,7 +122,11 @@ def add_movie(
 
 
 def delete_movie(title: str) -> None:
-    """Delete an existing movie from the database."""
+    """
+    Delete a movie with the given title for the current user.
+
+    Matching is case-insensitive on the ``title`` column.
+    """
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = ("DELETE FROM movies WHERE LOWER(title) = :title "
@@ -115,7 +144,11 @@ def delete_movie(title: str) -> None:
 
 
 def update_movie(title: str, note: str) -> None:
-    """Update an existing movie rating from the database."""
+    """
+    Update the note of an existing movie for the current user.
+
+    Empty strings are persisted as NULL.
+    """
     user_id, username = utils.get_current_user()
     with engine.connect() as connection:
         query = ("UPDATE movies SET note = :note "
@@ -134,7 +167,12 @@ def update_movie(title: str, note: str) -> None:
 
 
 def get_movie(title: str):
-    """Retrieve a single movie item from the database."""
+    """
+    Return a single movie row for the current user by case-insensitive title.
+
+    Returns:
+        sqlalchemy.engine.Row | None: The matching row, if any.
+    """
     user_id, *_ = utils.get_current_user()
     with engine.connect() as connection:
         query = """SELECT * FROM movies WHERE LOWER(title) = :title
@@ -149,7 +187,7 @@ def get_movie(title: str):
 
 
 def get_users() -> list[tuple[int, str]]:
-    """Retrieve all users from the database."""
+    """Return all users as ``(id, name)`` tuples."""
     with engine.connect() as connection:
         query = "SELECT id, name FROM users"
         results = connection.execute(text(query))
@@ -159,6 +197,7 @@ def get_users() -> list[tuple[int, str]]:
 
 
 def add_user(name: str) -> None:
+    """Create a new user with the given name and print a confirmation."""
     with engine.connect() as connection:
         query = "INSERT INTO users (name) VALUES (:name)"
         try:
