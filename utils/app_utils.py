@@ -229,7 +229,7 @@ def get_valid_number(
         try:
             user_input = colored_input(prompt, True)
             if allow_empty and user_input == "":
-                pass
+                return None
             else:
                 user_input = num_type(user_input)
         except ValueError:
