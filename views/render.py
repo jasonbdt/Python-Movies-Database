@@ -104,7 +104,7 @@ def display_movie_list(
             colored_print(f"{username}, your {COLORS['HIGHLIGHT']}movie collection"
                           f" is empty{COLORS['INFO']}. Add some movies!", "INFO")
 
-    for title, data in movies:
+    for title, data in movies.items():
         rating, year = data['rating'], data['year']
         release_year = f" ({year})" if show_release_years else ""
         movie_note = "Empty" if data['note'] is None else data['note']

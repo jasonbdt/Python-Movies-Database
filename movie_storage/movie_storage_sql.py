@@ -4,14 +4,11 @@ SQLite-backed persistence layer for users and movies.
 Creates tables on module import (idempotent) and exposes CRUD operations used
 by the CLI commands. Uses SQLAlchemy Core and a file-based SQLite database.
 """
-from typing import Any
-import os
-
-from sqlalchemy import create_engine, text, Row
+from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 import utils
-from utils import colored_print
+from utils import colored_print, MoviesCollection
 load_dotenv()
 
 # Define the database URL
@@ -20,35 +17,8 @@ DB_URL = "sqlite:///data/movies.db"
 # Create the engine
 engine = create_engine(DB_URL, echo=False)
 
-# Create the `movies` and `users` table if they does not exist
-with engine.connect() as connection:
-    connection.execute(text("""
-        CREATE TABLE IF NOT EXISTS users (
-            'id' INTEGER NOT NULL,
-            'name' TEXT NOT NULL,
-            PRIMARY KEY('id' AUTOINCREMENT)
-        );
-    """))
 
-    connection.execute(text("""
-        CREATE TABLE IF NOT EXISTS movies (
-            'id' INTEGER NOT NULL,
-            'user_id' INTEGER NOT NULL,
-            'imdb_id' TEXT NOT NULL,
-            'title' TEXT NOT NULL,
-            'year' INTEGER NOT NULL,
-            'rating' REAL NOT NULL,
-            'poster' TEXT NOT NULL,
-            'note' TEXT,
-            'country_iso2' TEXT NOT NULL,
-            PRIMARY KEY('id' AUTOINCREMENT),
-            FOREIGN KEY('user_id') REFERENCES 'users'('id')
-        );
-    """))
-    connection.commit()
-
-
-def list_movies() -> list[tuple[str, dict[str, Any]]]:
+def list_movies() -> MoviesCollection:
     """
     Return all movies of the current user as ``(title, data)`` pairs.
 
@@ -63,14 +33,14 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
         })
         movies = results.fetchall()
 
-    return [(title, {
+    return {title: {
         "year": year,
         "rating": rating,
         "poster": poster,
         "note": note,
         "imdb_id": imdb_id,
         "country_iso2": country_iso2
-    }) for title, year, rating, poster, note, imdb_id, country_iso2 in movies]
+    } for title, year, rating, poster, note, imdb_id, country_iso2 in movies}
 
 
 def add_movie(
