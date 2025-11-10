@@ -4,15 +4,11 @@ SQLite-backed persistence layer for users and movies.
 Creates tables on module import (idempotent) and exposes CRUD operations used
 by the CLI commands. Uses SQLAlchemy Core and a file-based SQLite database.
 """
-from typing import Any
-
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 import utils
 from utils import colored_print, MoviesCollection
-
-# from setup import create_tables
 load_dotenv()
 
 # Define the database URL
@@ -21,7 +17,6 @@ DB_URL = "sqlite:///data/movies.db"
 # Create the engine
 engine = create_engine(DB_URL, echo=False)
 
-# create_tables()
 
 def list_movies() -> MoviesCollection:
     """
