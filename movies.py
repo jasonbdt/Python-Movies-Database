@@ -128,7 +128,11 @@ def fetch_movie_data(title: str):
             "apikey": API_KEY,
             "t": title
         })
-    except requests.exceptions.ConnectionError:
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.HTTPError
+    ):
         utils.colored_print(
             f"Error fetching data, please try again later!", "ERROR", True)
     else:
