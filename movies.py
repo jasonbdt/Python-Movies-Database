@@ -357,6 +357,7 @@ def create_rating_histogram() -> None:
         ratings = [data['rating'] for name, data in movies]
         plt.hist(ratings)
         plt.savefig(f"{file_name}")
+        plt.close()
     else:
         utils.colored_print("File name can't be empty!", "ERROR")
     print()
