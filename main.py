@@ -1,6 +1,7 @@
 """Entry point for the Movies Database CLI application."""
 
 import movies
+from setup import create_tables
 
 
 def main() -> None:
@@ -9,6 +10,7 @@ def main() -> None:
 
     Delegates to `movies.start_app` to enter the main command loop.
     """
+    create_tables()
     movies.start_app()
 
 

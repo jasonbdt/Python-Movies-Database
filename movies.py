@@ -128,7 +128,11 @@ def fetch_movie_data(title: str):
             "apikey": API_KEY,
             "t": title
         })
-    except requests.exceptions.ConnectionError:
+    except (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.HTTPError
+    ):
         utils.colored_print(
             f"Error fetching data, please try again later!", "ERROR", True)
     else:
@@ -357,6 +361,7 @@ def create_rating_histogram() -> None:
         ratings = [data['rating'] for name, data in movies]
         plt.hist(ratings)
         plt.savefig(f"{file_name}")
+        plt.close()
     else:
         utils.colored_print("File name can't be empty!", "ERROR")
     print()
