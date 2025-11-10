@@ -10,8 +10,9 @@ from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
 import utils
-from utils import colored_print
-from setup import create_tables
+from utils import colored_print, MoviesCollection
+
+# from setup import create_tables
 load_dotenv()
 
 # Define the database URL
@@ -22,8 +23,7 @@ engine = create_engine(DB_URL, echo=False)
 
 # create_tables()
 
-
-def list_movies() -> list[tuple[str, dict[str, Any]]]:
+def list_movies() -> MoviesCollection:
     """
     Return all movies of the current user as ``(title, data)`` pairs.
 
@@ -38,14 +38,14 @@ def list_movies() -> list[tuple[str, dict[str, Any]]]:
         })
         movies = results.fetchall()
 
-    return [(title, {
+    return {title: {
         "year": year,
         "rating": rating,
         "poster": poster,
         "note": note,
         "imdb_id": imdb_id,
         "country_iso2": country_iso2
-    }) for title, year, rating, poster, note, imdb_id, country_iso2 in movies]
+    } for title, year, rating, poster, note, imdb_id, country_iso2 in movies}
 
 
 def add_movie(

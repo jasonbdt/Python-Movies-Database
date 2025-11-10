@@ -10,7 +10,7 @@ CLIFunction = Callable[..., Any]
 CLIDescription = str
 CLICommand = tuple[CLIFunction, CLIDescription]
 
-MoviesCollection = list[tuple[str, dict[str, Any]]]
+MoviesCollection = dict[Any, dict[str, Any]]
 NumRange = tuple[int, int]
 NumType = Callable[[str], int] | Callable[[str], float]
 YearType = Literal["start", "end"]
